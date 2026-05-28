@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { CATEGORIES } from '../data/meals';
 
 const COMMON_UNITS = [
@@ -20,31 +20,27 @@ function recipesEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-export default function RecipeEditor({ meal, onSave, onClose, ingredientLibrary = [] }) {
-  const [recipe, setRecipe] = useState(() => {
-    const r = meal.recipe;
-    if (!r) return emptyRecipe();
-    return {
-      servings: r.servings ?? '',
-      prepTime: r.prepTime ?? '',
-      cookTime: r.cookTime ?? '',
-      ingredients: r.ingredients?.length ? r.ingredients : [{ quantity: '', unit: '', name: '' }],
-      instructions: r.instructions?.length ? r.instructions : [''],
-    };
-  });
+function buildRecipe(meal) {
+  const r = meal.recipe;
+  if (!r) return emptyRecipe();
+  return {
+    servings: r.servings ?? '',
+    prepTime: r.prepTime ?? '',
+    cookTime: r.cookTime ?? '',
+    ingredients: r.ingredients?.length ? r.ingredients : [{ quantity: '', unit: '', name: '' }],
+    instructions: r.instructions?.length ? r.instructions : [''],
+  };
+}
 
-  const initialRecipe = useRef(null);
-  useEffect(() => {
-    if (initialRecipe.current === null) {
-      initialRecipe.current = recipe;
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+export default function RecipeEditor({ meal, onSave, onClose, ingredientLibrary = [] }) {
+  const [recipe, setRecipe] = useState(() => buildRecipe(meal));
+  const [initialRecipe] = useState(() => buildRecipe(meal));
 
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [saveLabel, setSaveLabel] = useState('Save Recipe');
 
   const qtyRefs = useRef({});
-  const isDirty = initialRecipe.current ? !recipesEqual(recipe, initialRecipe.current) : false;
+  const isDirty = !recipesEqual(recipe, initialRecipe);
 
   const setMeta = (key, val) => setRecipe(r => ({ ...r, [key]: val }));
 
