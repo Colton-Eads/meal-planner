@@ -23,13 +23,13 @@ export default function ProfileManager({ profiles, activeProfileId, onSwitch, on
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const name = newName.trim();
     if (!name) return;
-    const id = onAdd(name);
+    const id = await onAdd(name);
     setNewName('');
     setAdding(false);
-    onSwitch(id);
+    if (id) onSwitch(id);
     setOpen(false);
   };
 

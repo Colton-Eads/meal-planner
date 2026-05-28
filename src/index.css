@@ -2362,3 +2362,75 @@ body { margin: 0; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Account menu (header dropdown for sign-out / delete) ────────────────── */
+.account-menu { position: relative; }
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  min-width: 240px;
+  z-index: 200;
+  color: var(--text);
+  overflow: hidden;
+}
+
+.account-dropdown-email {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+.account-item:hover { background: var(--bg); }
+.account-item-danger { color: var(--danger); }
+
+.account-delete-confirm {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.account-delete-msg {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.account-delete-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Header tightening for narrow screens ────────────────────────────────── */
+@media (max-width: 640px) {
+  .app-header { padding: 0 8px; }
+  .header-inner { gap: 6px; height: 52px; }
+  .tab-nav-btn { padding: 6px 8px; font-size: 13px; }
+  .profile-name { max-width: 60px; }
+  .btn-dark-toggle { width: 30px; height: 30px; font-size: 14px; }
+}
+
+@media (max-width: 400px) {
+  .app-title { display: none; }                /* title eats too much room; tabs are the wayfinding */
+  .profile-name { max-width: 50px; }
+}
+

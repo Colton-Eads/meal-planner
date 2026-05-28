@@ -8,9 +8,9 @@ import DayView from './components/DayView';
 import Tutorial from './components/Tutorial';
 import { isTutorialDone } from './lib/tutorialState';
 import ProfileManager from './components/ProfileManager';
+import AccountMenu from './components/AccountMenu';
 import ImportModal from './components/ImportModal';
 import { useMealPlan, EAT_OUT, LEFTOVER } from './hooks/useMealPlan';
-import { supabase } from './lib/supabase';
 import './index.css';
 
 export default function App() {
@@ -160,13 +160,7 @@ export default function App() {
             >
               {darkMode ? '☀' : '🌙'}
             </button>
-            <button
-              className="btn-dark-toggle"
-              onClick={() => supabase.auth.signOut()}
-              title="Sign out"
-            >
-              ⏻
-            </button>
+            <AccountMenu />
           </div>
         </div>
       </header>
