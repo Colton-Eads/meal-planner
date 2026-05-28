@@ -13,7 +13,7 @@ function TagChip({ tag, onRemove }) {
   );
 }
 
-function MealRow({ meal, onEdit, onDelete, onEditRecipe }) {
+function MealRow({ meal, onEdit, onDelete, onEditRecipe, onViewRecipe }) {
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [name, setName] = useState(meal.name);
@@ -93,10 +93,18 @@ function MealRow({ meal, onEdit, onDelete, onEditRecipe }) {
       </div>
       <span className="meal-cat-label" style={{ color: cat.color, background: cat.bg }}>{meal.category}</span>
       <div className="meal-row-actions">
-        <button className="btn-sm recipe-btn" onClick={() => onEditRecipe(meal)}>
-          {meal.recipe?.ingredients?.some(i => i.name?.trim()) || meal.recipe?.instructions?.some(s => s?.trim())
-            ? '📋 Recipe' : '+ Recipe'}
-        </button>
+        {(() => {
+          const hasRecipe = meal.recipe?.ingredients?.some(i => i.name?.trim())
+            || meal.recipe?.instructions?.some(s => s?.trim());
+          return (
+            <button
+              className="btn-sm recipe-btn"
+              onClick={() => hasRecipe ? onViewRecipe(meal) : onEditRecipe(meal)}
+            >
+              {hasRecipe ? '📋 Recipe' : '+ Recipe'}
+            </button>
+          );
+        })()}
         <button className="btn-sm" onClick={() => setEditing(true)}>Edit</button>
         <span className="meal-row-divider" />
         <button className="btn-sm danger" onClick={() => setConfirmDelete(true)}>Delete</button>
@@ -106,7 +114,7 @@ function MealRow({ meal, onEdit, onDelete, onEditRecipe }) {
 }
 
 export default function MealLibrary({
-  meals, onAdd, onEdit, onDelete, onEditRecipe, onOpenImport, onOpenRecipeImport,
+  meals, onAdd, onEdit, onDelete, onEditRecipe, onViewRecipe, onOpenImport, onOpenRecipeImport,
   ingredientLibrary, onAddIngredient, onEditIngredient, onDeleteIngredient,
 }) {
   const [subTab, setSubTab] = useState('meals');
@@ -241,7 +249,7 @@ export default function MealLibrary({
       <div className="meal-list">
         {filtered.length === 0
           ? <p className="empty-state">No meals found.</p>
-          : filtered.map(m => <MealRow key={m.id} meal={m} onEdit={onEdit} onDelete={onDelete} onEditRecipe={onEditRecipe} />)
+          : filtered.map(m => <MealRow key={m.id} meal={m} onEdit={onEdit} onDelete={onDelete} onEditRecipe={onEditRecipe} onViewRecipe={onViewRecipe} />)
         }
       </div>
     </div>

@@ -54,6 +54,7 @@ export default function App() {
   const handleCloseEditor = () => setRecipeEditorMealId(null);
   const handleSaveRecipe = (id, recipe) => { updateMealRecipe(id, recipe); setRecipeEditorMealId(null); };
 
+  const handleOpenView = (meal) => setRecipeViewMealId(meal.id);
   const handleCloseView = () => setRecipeViewMealId(null);
   const handleEditFromView = () => {
     const id = recipeViewMealId;
@@ -185,6 +186,7 @@ export default function App() {
             onEdit={editMeal}
             onDelete={deleteMeal}
             onEditRecipe={handleOpenEditor}
+            onViewRecipe={handleOpenView}
             onOpenImport={() => setImportType('meals')}
             onOpenRecipeImport={() => setImportType('recipes')}
             ingredientLibrary={ingredientLibrary}
