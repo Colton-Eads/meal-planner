@@ -22,6 +22,7 @@ export default function App() {
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone());
 
   const {
+    loading,
     // Profile
     profiles, activeProfileId,
     addProfile, deleteProfile, renameProfile, switchProfile,
@@ -71,6 +72,16 @@ export default function App() {
   const handleImportMeals = (newMeals) => {
     addMeals(newMeals);
   };
+
+  if (loading) {
+    return (
+      <div className={`app${darkMode ? ' dark' : ''}`}>
+        <div className="auth-shell">
+          <div className="auth-card auth-loading">Loading your meal plan…</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`app${darkMode ? ' dark' : ''}`}>
