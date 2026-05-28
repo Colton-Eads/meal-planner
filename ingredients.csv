@@ -1,0 +1,270 @@
+id,name,defaultQty,defaultUnit,altMeasure,category
+seed_1,Alfredo,,,,Other
+seed_2,All-purpose flour,,,,Pantry
+seed_3,American cheese,,,,Dairy & Eggs
+seed_4,Apple cider vinegar,,,,Produce
+seed_5,Apples,,,,Produce
+seed_6,Asian pear,,,,Produce
+seed_7,Au jus gravy mix,,,,Canned & Jarred
+seed_8,Avocado,,,,Produce
+seed_9,Baby back ribs,,,,Meat & Seafood
+seed_10,Bacon,,,,Meat & Seafood
+seed_11,Baking powder,,,,Pantry
+seed_12,Balsamic glaze,,,,Pantry
+seed_13,Balsamic vinegar,,,,Pantry
+seed_14,Basil pesto,,,,Produce
+seed_15,Bbq sauce,,,,Other
+seed_16,Beef broth,,,,Meat & Seafood
+seed_17,Beef chuck,,,,Meat & Seafood
+seed_18,Beef chuck roast,,,,Meat & Seafood
+seed_19,Beef ravioli,,,,Meat & Seafood
+seed_20,Beef ribeye,,,,Meat & Seafood
+seed_21,Bell pepper,,,,Produce
+seed_22,Bell peppers,,,,Produce
+seed_23,Black beans,,,,Canned & Jarred
+seed_24,Blue cheese crumbles,,,,Dairy & Eggs
+seed_25,Bone-in pork chops,,,,Meat & Seafood
+seed_26,Bone-in spiral ham,,,,Meat & Seafood
+seed_27,Breadcrumbs,,,,Bread & Pasta
+seed_28,Breakfast pork sausage,,,,Meat & Seafood
+seed_29,Breakfast sausage,,,,Meat & Seafood
+seed_30,Brioche buns,,,,Bread & Pasta
+seed_31,Broccoli florets,,,,Produce
+seed_32,Brown sugar,,,,Pantry
+seed_33,Butter,,,,Dairy & Eggs
+seed_34,Caesar dressing,,,,Pantry
+seed_35,Capers,,,,Other
+seed_36,Caraway seeds,,,,Other
+seed_37,Carrot,,,,Produce
+seed_38,Cauliflower,,,,Produce
+seed_39,Celery,,,,Produce
+seed_40,Cheddar Cheese,,,,Dairy & Eggs
+seed_41,Cherry tomatoes,,,,Produce
+seed_42,Chicken,,,,Meat & Seafood
+seed_43,Chicken Breast,,,,Meat & Seafood
+seed_44,Chicken broth,,,,Meat & Seafood
+seed_45,Chicken tenders,,,,Meat & Seafood
+seed_46,Chicken thigh,,,,Meat & Seafood
+seed_47,Chili powder,,,,Pantry
+seed_48,Chili powder and smoked paprika,,,,Pantry
+seed_49,Chipotle mayo,,,,Pantry
+seed_51,Cinnamon,,,,Pantry
+seed_52,Cinnamon and cloves,,,,Pantry
+seed_53,Coconut milk,,,,Dairy & Eggs
+seed_54,Cod,,,,Meat & Seafood
+seed_55,Cod fillets,,,,Meat & Seafood
+seed_56,Cold beer,,,,Pantry
+seed_57,Coleslaw mix,,,,Produce
+seed_61,Cooked lobster meat,,,,Meat & Seafood
+seed_62,Cooked rice,,,,Pantry
+seed_65,Corn,,,,Produce
+seed_66,Corn tortillas,,,,Produce
+seed_67,Cornstarch,,,,Produce
+seed_68,Cornstarch for coating,,,,Produce
+seed_69,Cotija cheese,,,,Dairy & Eggs
+seed_70,Cream cheese,,,,Dairy & Eggs
+seed_71,Cream of chicken soup,,,,Meat & Seafood
+seed_72,Cream of mushroom soup,,,,Produce
+seed_73,Croutons,,,,Bread & Pasta
+seed_74,Crushed tomatoes,,,,Produce
+seed_75,Cube steaks,,,,Meat & Seafood
+seed_76,Cumin,,,,Pantry
+seed_77,Cumin and chili powder,,,,Pantry
+seed_78,Cumin and garlic powder,,,,Produce
+seed_79,Deli ham,,,,Meat & Seafood
+seed_80,Diced green chiles,,,,Other
+seed_81,Diced ham,,,,Meat & Seafood
+seed_82,Diced tomatoes,,,,Produce
+seed_83,Diced tomatoes with green chiles,,,,Produce
+seed_84,Dijon mustard,,,,Pantry
+seed_85,Dijon mustard and honey,,,,Pantry
+seed_86,Ditalini,,,,Bread & Pasta
+seed_87,Dried ancho chiles,,,,Other
+seed_88,Dried guajillo chiles,,,,Other
+seed_89,Dried rosemary and thyme,,,,Pantry
+seed_90,Dry red wine,,,,Pantry
+seed_91,Dry white wine,,,,Pantry
+seed_92,Egg,,,,Dairy & Eggs
+seed_93,Egg noodles,,,,Dairy & Eggs
+seed_94,Elbow macaroni,,,,Bread & Pasta
+seed_95,Fajita,,,,Other
+seed_96,Fettuccine,,,,Bread & Pasta
+seed_97,Fillings: diced ham,,,,Meat & Seafood
+seed_98,Fine breadcrumbs,,,,Bread & Pasta
+seed_99,Firm tofu,,,,Other
+seed_100,Flank,,,,Meat & Seafood
+seed_101,Flour,,,,Pantry
+seed_102,Flour for dredging,,,,Pantry
+seed_103,Flour Tortillas,,,,Bread & Pasta
+seed_104,Frank's redhot,,,,Other
+seed_105,Fresh basil,,,,Produce
+seed_106,Fresh basil leaves,,,,Produce
+seed_107,Fresh cilantro,,,,Produce
+seed_108,Fresh Ginger,,,,Produce
+seed_111,Fresh parsley,,,,Produce
+seed_112,Fresh spinach,,,,Produce
+seed_113,Fresh thyme,,,,Pantry
+seed_114,Freshly grated parmesan,,,,Dairy & Eggs
+seed_115,Frozen french fries,,,,Frozen
+seed_116,Frozen green beans,,,,Canned & Jarred
+seed_117,Frozen mixed vegetables,,,,Frozen
+seed_118,Frozen peas,,,,Frozen
+seed_119,Frozen peas and carrots,,,,Produce
+seed_120,Garlic,,,,Produce
+seed_123,Garlic powder,,,,Produce
+seed_124,Grated parmesan,,,,Dairy & Eggs
+seed_125,Great northern,,,,Canned & Jarred
+seed_126,Green,,,,Other
+seed_127,Green chiles,,,,Other
+seed_128,Green onions,,,,Produce
+seed_129,Ground beef,,,,Meat & Seafood
+seed_131,Ham steak,,,,Meat & Seafood
+seed_132,Hamburger buns,,,,Meat & Seafood
+seed_133,Hard taco shells,,,,Bread & Pasta
+seed_134,Hard-boiled eggs,,,,Dairy & Eggs
+seed_135,Hawaiian rolls,,,,Bread & Pasta
+seed_136,Head of cabbage,,,,Produce
+seed_137,Heavy cream,,,,Dairy & Eggs
+seed_138,Hoagie rolls,,,,Bread & Pasta
+seed_139,Hoisin sauce,,,,Pantry
+seed_140,Honey,,,,Pantry
+seed_141,Hot dog buns,,,,Meat & Seafood
+seed_142,Hot dogs,,,,Meat & Seafood
+seed_143,Italian breadcrumbs,,,,Bread & Pasta
+seed_144,Italian sausage,,,,Meat & Seafood
+seed_145,Italian seasoning,,,,Pantry
+seed_146,Jalapeños,,,,Produce
+seed_147,Jumbo pasta shells,,,,Bread & Pasta
+seed_148,Ketchup,,,,Pantry
+seed_149,Kidney beans,,,,Canned & Jarred
+seed_150,Kielbasa,,,,Meat & Seafood
+seed_151,Large eggplants,,,,Produce
+seed_154,Large russet potatoes,,,,Produce
+seed_156,Large spaghetti squash,,,,Produce
+seed_157,Lasagna noodles,,,,Bread & Pasta
+seed_158,Lemon,,,,Produce
+seed_159,Lemon Juice,,,,Produce
+seed_160,Lemon juice and olive oil,,,,Produce
+seed_161,Lemon pepper seasoning,,,,Produce
+seed_162,Lettuce,,,,Produce
+seed_163,Lime,,,,Produce
+seed_164,Lime juice,,,,Produce
+seed_165,Linguine,,,,Bread & Pasta
+seed_166,Long-grain white rice,,,,Pantry
+seed_167,Lump crab meat,,,,Meat & Seafood
+seed_168,Manwich,,,,Canned & Jarred
+seed_169,Marinara,,,,Canned & Jarred
+seed_170,Marinara sauce,,,,Canned & Jarred
+seed_171,Marsala wine,,,,Pantry
+seed_172,Mashed potatoes,,,,Produce
+seed_173,Mayonnaise,,,,Pantry
+seed_174,Meatballs,,,,Meat & Seafood
+seed_176,Melted butter,,,,Dairy & Eggs
+seed_177,Milk,,,,Dairy & Eggs
+seed_178,Minced clams with juice,,,,Meat & Seafood
+seed_179,Mixed vegetables,,,,Other
+seed_247,Mozzarella Cheese,,,,Dairy & Eggs
+seed_180,Mushroom,,,,Produce
+seed_181,Mustard powder,,,,Pantry
+seed_182,Neutral oil,,,,Pantry
+seed_183,Old bay seasoning,,,,Pantry
+seed_184,Olive oil,,,,Pantry
+seed_185,Onion,,,,Produce
+seed_186,Onion soup mix,,,,Produce
+seed_187,Orange,,,,Produce
+seed_188,Orange juice,,,,Produce
+seed_189,Orange zest,,,,Produce
+seed_190,Oyster sauce,,,,Pantry
+seed_191,Pan drippings for gravy,,,,Other
+seed_192,Pasta,,,,Bread & Pasta
+seed_193,Pasta water reserved,,,,Bread & Pasta
+seed_194,Pearl barley,,,,Produce
+seed_195,Pepperoncini peppers,,,,Produce
+seed_196,Pie crust,,,,Other
+seed_197,Pie crusts,,,,Other
+seed_198,Pineapple chunks with juice,,,,Produce
+seed_199,Pita breads,,,,Bread & Pasta
+seed_200,Pork,,,,Meat & Seafood
+seed_201,Pork and beans,,,,Meat & Seafood
+seed_202,Pork loin,,,,Meat & Seafood
+seed_203,Pork loin chops,,,,Meat & Seafood
+seed_204,Pork shoulder,,,,Meat & Seafood
+seed_205,Pork tenderloin,,,,Meat & Seafood
+seed_206,Potato,,,,Produce
+seed_207,Pre-smoked pork chops,,,,Meat & Seafood
+seed_208,Provolone Cheese,,,,Dairy & Eggs
+seed_210,Ranch,,,,Pantry
+seed_211,Ranch dressing mix,,,,Pantry
+seed_212,Red,,,,Other
+seed_213,Red enchilada sauce,,,,Canned & Jarred
+seed_214,Red lobster cheddar bay biscuit mix,,,,Meat & Seafood
+seed_215,Red onion,,,,Produce
+seed_216,Refried beans,,,,Canned & Jarred
+seed_217,Refrigerated biscuit dough,,,,Bread & Pasta
+seed_218,Refrigerated biscuits,,,,Bread & Pasta
+seed_219,Rice vinegar,,,,Pantry
+seed_220,Ricotta Cheese,,,,Dairy & Eggs
+seed_222,Romaine,,,,Produce
+seed_223,Romaine Lettuce,,,,Produce
+seed_224,Rosemary,,,,Pantry
+seed_225,Rotel,,,,Canned & Jarred
+seed_226,Rotini pasta,,,,Bread & Pasta
+seed_227,Round steak,,,,Meat & Seafood
+seed_228,Rye,,,,Other
+seed_229,Rye bread,,,,Bread & Pasta
+seed_230,Salmon fillets,,,,Meat & Seafood
+seed_231,Salsa,,,,Canned & Jarred
+seed_232,Salt,,,,Pantry
+seed_233,Sandwich buns,,,,Bread & Pasta
+seed_234,Sauerkraut,,,,Other
+seed_235,Seasoned breadcrumbs,,,,Bread & Pasta
+seed_236,Sesame oil,,,,Pantry
+seed_237,Sesame oil and red pepper flakes,,,,Produce
+seed_238,Shaved parmesan,,,,Dairy & Eggs
+seed_239,Shaved ribeye,,,,Meat & Seafood
+seed_242,Shredded cheese,,,,Dairy & Eggs
+seed_244,Shredded mexican cheese,,,,Dairy & Eggs
+seed_245,Shredded mexican cheese blend,,,,Dairy & Eggs
+seed_246,Shredded monterey jack,,,,Dairy & Eggs
+seed_248,Shredded oaxaca,,,,Other
+seed_251,Shrimp,,,,Meat & Seafood
+seed_252,Sirloin,,,,Meat & Seafood
+seed_253,Sirloin steak,,,,Meat & Seafood
+seed_254,Sliced deli corned beef,,,,Meat & Seafood
+seed_256,Sliced mushrooms,,,,Produce
+seed_258,Smash burger sauce: mayo,,,,Pantry
+seed_259,Smoked paprika,,,,Pantry
+seed_260,Smoked sausage,,,,Meat & Seafood
+seed_261,Sour cream,,,,Dairy & Eggs
+seed_262,Sour cream + 1 tsp lime juice,,,,Produce
+seed_263,Soy sauce,,,,Pantry
+seed_264,Spaghetti,,,,Bread & Pasta
+seed_265,Stew beef,,,,Meat & Seafood
+seed_266,Sugar,,,,Pantry
+seed_267,Swiss Cheese,,,,Dairy & Eggs
+seed_268,Taco,,,,Other
+seed_269,Taco seasoning,,,,Pantry
+seed_270,Tartar sauce,,,,Pantry
+seed_271,Thick bread,,,,Bread & Pasta
+seed_272,Thousand island dressing,,,,Pantry
+seed_273,Tikka masala spice blend,,,,Pantry
+seed_274,Tomato,,,,Produce
+seed_275,Tomato paste,,,,Produce
+seed_276,Tomato sauce,,,,Produce
+seed_277,Tomato soup,,,,Produce
+seed_278,Top-split hot dog buns,,,,Meat & Seafood
+seed_279,Tortilla chips,,,,Bread & Pasta
+seed_280,Tuna in water,,,,Meat & Seafood
+seed_281,Tzatziki,,,,Other
+seed_282,Vanilla extract,,,,Pantry
+seed_283,Vegetable oil,,,,Pantry
+seed_284,Velveeta,,,,Dairy & Eggs
+seed_286,White beans,,,,Canned & Jarred
+seed_287,White fish fillets,,,,Meat & Seafood
+seed_288,White onion,,,,Produce
+seed_289,White Rice,,,,Pantry
+seed_291,Whole turkey,,,,Meat & Seafood
+seed_292,Worcestershire sauce,,,,Pantry
+seed_293,Worcestershire sauce and poppy seeds,,,,Pantry
+seed_294,Yellow mustard and cider vinegar,,,,Pantry
+seed_295,Ziti pasta,,,,Bread & Pasta
