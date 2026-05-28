@@ -1517,6 +1517,62 @@ body { margin: 0; }
   gap: 12px;
 }
 .library-search-row .search-input { flex: 1; max-width: 360px; }
+
+/* Chip-style search input — multi-term AND filtering */
+.search-chip-input {
+  flex: 1;
+  max-width: 480px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-height: 38px;
+}
+.search-chip-input:focus-within { border-color: var(--primary); }
+
+.search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.search-chip-remove {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.search-chip-remove:hover { background: rgba(255,255,255,0.35); }
+
+.search-chip-text {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  padding: 4px 0;
+}
 .meal-count-label {
   font-size: 13px;
   color: var(--text-muted);

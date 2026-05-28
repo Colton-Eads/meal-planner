@@ -120,7 +120,8 @@ export default function MealLibrary({
   const [subTab, setSubTab] = useState('meals');
   const [filterCat, setFilterCat] = useState('All');
   const [filterTag, setFilterTag] = useState('');
-  const [search, setSearch] = useState('');
+  const [searchTerms, setSearchTerms] = useState([]);
+  const [searchInput, setSearchInput] = useState('');
   const [newName, setNewName] = useState('');
   const [newCat, setNewCat] = useState('Beef');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -128,21 +129,51 @@ export default function MealLibrary({
 
   const allTags = [...new Set(meals.flatMap(m => m.tags || []))].sort();
 
+  // Pending input is treated as an unsealed extra chip so live-typing filters
+  // without forcing the user to hit Enter first.
+  const pending = searchInput.trim();
+  const activeTerms = pending ? [...searchTerms, pending] : searchTerms;
+
+  const matchesTerm = (m, term) => {
+    const q = term.toLowerCase();
+    return m.name.toLowerCase().includes(q)
+      || m.recipe?.ingredients?.some(i => i.name?.toLowerCase().includes(q));
+  };
+
   const filtered = meals.filter(m => {
     const catMatch = filterCat === 'All' || m.category === filterCat;
     const tagMatch = !filterTag || m.tags?.includes(filterTag);
-    const q = search.trim().toLowerCase();
-    const searchMatch = !q
-      || m.name.toLowerCase().includes(q)
-      || m.recipe?.ingredients?.some(i => i.name?.toLowerCase().includes(q));
+    const searchMatch = activeTerms.every(t => matchesTerm(m, t));
     return catMatch && tagMatch && searchMatch;
   });
+
+  const addSearchTerm = () => {
+    const t = searchInput.trim();
+    if (!t) return;
+    if (!searchTerms.some(x => x.toLowerCase() === t.toLowerCase())) {
+      setSearchTerms(prev => [...prev, t]);
+    }
+    setSearchInput('');
+  };
+
+  const removeSearchTerm = (t) => {
+    setSearchTerms(prev => prev.filter(x => x !== t));
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSearchTerm();
+    } else if (e.key === 'Backspace' && !searchInput && searchTerms.length > 0) {
+      removeSearchTerm(searchTerms[searchTerms.length - 1]);
+    }
+  };
 
   const counts = Object.fromEntries(
     Object.keys(CATEGORIES).map(c => [c, meals.filter(m => m.category === c).length])
   );
 
-  const isFiltered = filterCat !== 'All' || filterTag || search;
+  const isFiltered = filterCat !== 'All' || filterTag || activeTerms.length > 0;
 
   const handleAdd = () => {
     if (newName.trim()) { onAdd(newName, newCat); setNewName(''); }
@@ -240,7 +271,27 @@ export default function MealLibrary({
       )}
 
       <div className="library-search-row">
-        <input className="search-input" placeholder="Search meals or ingredients..." value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="search-chip-input">
+          {searchTerms.map(t => (
+            <span key={t} className="search-chip">
+              {t}
+              <button
+                type="button"
+                className="search-chip-remove"
+                onClick={() => removeSearchTerm(t)}
+                aria-label={`Remove ${t}`}
+              >×</button>
+            </span>
+          ))}
+          <input
+            className="search-chip-text"
+            placeholder={searchTerms.length === 0 ? 'Search meals or ingredients…' : 'Add another…'}
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            onBlur={addSearchTerm}
+          />
+        </div>
         <span className="meal-count-label">
           {isFiltered ? `${filtered.length} of ${meals.length}` : `${meals.length}`} meals
         </span>
