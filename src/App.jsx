@@ -10,6 +10,7 @@ import { isTutorialDone } from './lib/tutorialState';
 import ProfileManager from './components/ProfileManager';
 import ImportModal from './components/ImportModal';
 import { useMealPlan, EAT_OUT, LEFTOVER } from './hooks/useMealPlan';
+import { supabase } from './lib/supabase';
 import './index.css';
 
 export default function App() {
@@ -147,6 +148,13 @@ export default function App() {
               title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {darkMode ? '☀' : '🌙'}
+            </button>
+            <button
+              className="btn-dark-toggle"
+              onClick={() => supabase.auth.signOut()}
+              title="Sign out"
+            >
+              ⏻
             </button>
           </div>
         </div>

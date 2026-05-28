@@ -2230,3 +2230,101 @@ body { margin: 0; }
   body:has(.day-view-overlay) .dv-check-item input { display: none; }
 }
 
+/* ── Auth screen ─────────────────────────────────────────────────────────── */
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.auth-card.auth-loading { text-align: center; color: var(--text-muted); }
+
+.auth-title {
+  margin: 0 0 4px;
+  font-size: 28px;
+  color: var(--primary);
+  text-align: center;
+}
+
+.auth-subtitle {
+  margin: 0 0 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
+
+.auth-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth-label input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+}
+.auth-label input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.auth-submit { margin-top: 8px; padding: 10px; }
+
+.auth-error {
+  padding: 10px 12px;
+  background: #fee;
+  border: 1px solid #fbb;
+  color: #c00;
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.auth-info {
+  padding: 10px 12px;
+  background: #eef7f0;
+  border: 1px solid #b6dcc1;
+  color: #1b4332;
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.auth-toggle {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+}
+.auth-link:hover { color: var(--primary-hover); }
+
