@@ -5,7 +5,8 @@ import GroceryList from './components/GroceryList';
 import RecipeEditor from './components/RecipeEditor';
 import RecipeView from './components/RecipeView';
 import DayView from './components/DayView';
-import Tutorial, { isTutorialDone } from './components/Tutorial';
+import Tutorial from './components/Tutorial';
+import { isTutorialDone } from './lib/tutorialState';
 import ProfileManager from './components/ProfileManager';
 import ImportModal from './components/ImportModal';
 import { useMealPlan, EAT_OUT, LEFTOVER } from './hooks/useMealPlan';
@@ -53,7 +54,6 @@ export default function App() {
   const handleCloseEditor = () => setRecipeEditorMealId(null);
   const handleSaveRecipe = (id, recipe) => { updateMealRecipe(id, recipe); setRecipeEditorMealId(null); };
 
-  const handleOpenView = (meal) => setRecipeViewMealId(meal.id);
   const handleCloseView = () => setRecipeViewMealId(null);
   const handleEditFromView = () => {
     const id = recipeViewMealId;
@@ -158,7 +158,6 @@ export default function App() {
             viewMonth={viewMonth}
             currentPlan={currentPlan}
             meals={meals}
-            activeMeals={activeMeals}
             eatOutEnabled={eatOutEnabled}
             eatOutCount={eatOutCount}
             eatOutSameNight={eatOutSameNight}

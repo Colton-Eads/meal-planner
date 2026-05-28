@@ -1,14 +1,5 @@
 import { useState } from 'react';
-
-const STORAGE_KEY = 'emp_tutorial_done';
-
-export function isTutorialDone() {
-  try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
-}
-
-function markDone() {
-  try { localStorage.setItem(STORAGE_KEY, 'true'); } catch {}
-}
+import { markTutorialDone } from '../lib/tutorialState';
 
 function ProgressDots({ total, current }) {
   return (
@@ -22,16 +13,14 @@ function ProgressDots({ total, current }) {
 
 export default function Tutorial({ mealCount, onRegenerate, onDone }) {
   const [step, setStep] = useState(0);
-  const [generated, setGenerated] = useState(false);
 
-  const handleDone = () => { markDone(); onDone(); };
-  const handleSkip = () => { markDone(); onDone(); };
+  const handleDone = () => { markTutorialDone(); onDone(); };
+  const handleSkip = () => { markTutorialDone(); onDone(); };
   const next = () => setStep(s => s + 1);
   const back = () => setStep(s => s - 1);
 
   const handleGenerate = () => {
     onRegenerate();
-    setGenerated(true);
     next();
   };
 

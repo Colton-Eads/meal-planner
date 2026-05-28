@@ -105,7 +105,7 @@ function exportPlanCsv(viewYear, viewMonth, currentPlan, mealMap) {
 }
 
 export default function CalendarView({
-  viewYear, viewMonth, currentPlan, meals, activeMeals,
+  viewYear, viewMonth, currentPlan, meals,
   eatOutEnabled, eatOutCount, eatOutSameNight, eatOutDayOfWeek,
   currentLocked, enabledCategories, canUndo,
   onRegenerate, onUndo, onReassign, onToggleCategory,

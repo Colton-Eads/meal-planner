@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export const GROCERY_CATEGORIES = [
+const GROCERY_CATEGORIES = [
   'Meat & Seafood',
   'Produce',
   'Dairy & Eggs',

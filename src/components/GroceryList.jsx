@@ -167,7 +167,7 @@ function normalizeIngredient(rawName, rawUnit) {
   n = n.replace(/\s*\([^)]*\)/g, '').trim();
   n = n.replace(/,.*$/, '').trim();
   n = n.replace(/\s+or\s+.*$/, '').trim();
-  n = n.replace(/\s+[—–\-]\s+.*$/, '').trim();
+  n = n.replace(/\s+[—–-]\s+.*$/, '').trim();
 
   let changed = true;
   while (changed) {
@@ -331,7 +331,6 @@ export default function GroceryList({
   groceryChecked, onToggleItem, onClearChecked,
   ingredientLibrary,
 }) {
-  const [copyMsg, setCopyMsg] = useState('');
   const [rangeMode, setRangeMode] = useState('month');
   const [rangeStart, setRangeStart] = useState(1);
   const [rangeEnd, setRangeEnd] = useState(7);
@@ -365,10 +364,7 @@ export default function GroceryList({
   const exportText = buildExportText(byCategory, rangeLabel, householdSize);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(exportText).then(() => {
-      setCopyMsg('Copied!');
-      setTimeout(() => setCopyMsg(''), 2000);
-    });
+    navigator.clipboard.writeText(exportText);
   };
 
   const handleDownload = () => {
