@@ -2328,3 +2328,37 @@ body { margin: 0; }
 }
 .auth-link:hover { color: var(--primary-hover); }
 
+/* ── Toast host ──────────────────────────────────────────────────────────── */
+.toast-host {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+  max-width: calc(100vw - 32px);
+}
+
+.toast {
+  font: inherit;
+  text-align: left;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  font-size: 13px;
+  cursor: pointer;
+  max-width: 380px;
+  animation: toast-in 180ms ease-out;
+}
+
+.toast-error   { background: #fee; border-color: #fbb; color: #800; }
+.toast-success { background: #eef7f0; border-color: #b6dcc1; color: #1b4332; }
+.toast-info    { background: #eef4fa; border-color: #b9d2e7; color: #1a3a5a; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+

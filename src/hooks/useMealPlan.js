@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
+import { reportError } from '../lib/toast';
 
 export const EAT_OUT = 'EAT_OUT';
 export const LEFTOVER = 'LEFTOVER';
@@ -212,11 +213,11 @@ export function useMealPlan() {
         .order('name'),
     ]);
 
-    if (mealsRes.error)    console.error('load meals',    mealsRes.error);
-    if (plansRes.error)    console.error('load plans',    plansRes.error);
-    if (lockedRes.error)   console.error('load locked',   lockedRes.error);
-    if (settingsRes.error) console.error('load settings', settingsRes.error);
-    if (ingRes.error)      console.error('load ings',     ingRes.error);
+    if (mealsRes.error)    reportError('load meals',    mealsRes.error);
+    if (plansRes.error)    reportError('load plans',    plansRes.error);
+    if (lockedRes.error)   reportError('load locked',   lockedRes.error);
+    if (settingsRes.error) reportError('load settings', settingsRes.error);
+    if (ingRes.error)      reportError('load ings',     ingRes.error);
 
     setMeals((mealsRes.data ?? []).map(mealFromRow));
     setPlansByMonth(planRowsToMonthMap(plansRes.data ?? []));
@@ -237,7 +238,7 @@ export function useMealPlan() {
         .from('profiles')
         .select('id, name')
         .order('created_at');
-      if (error) { console.error('load profiles', error); setLoading(false); return; }
+      if (error) { reportError('load profiles', error); setLoading(false); return; }
       setProfiles(profs);
 
       // Pick active profile: stored preference if still valid, else first one
@@ -281,7 +282,7 @@ export function useMealPlan() {
       .from('profiles')
       .insert({ user_id: user.id, name: trimmed })
       .select().single();
-    if (error) { console.error('addProfile', error); return null; }
+    if (error) { reportError('addProfile', error); return null; }
     await supabase.from('profile_settings').insert({ profile_id: prof.id });
     setProfiles(prev => [...prev, prof]);
     return prof.id;
@@ -290,7 +291,7 @@ export function useMealPlan() {
   const deleteProfile = async (id) => {
     if (profiles.length <= 1) return;
     const { error } = await supabase.from('profiles').delete().eq('id', id);
-    if (error) { console.error('deleteProfile', error); return; }
+    if (error) { reportError('deleteProfile', error); return; }
     setProfiles(prev => prev.filter(p => p.id !== id));
     if (activeProfileId === id) {
       const next = profiles.find(p => p.id !== id);
@@ -307,7 +308,7 @@ export function useMealPlan() {
     if (!trimmed) return;
     setProfiles(prev => prev.map(p => p.id === id ? { ...p, name: trimmed } : p));
     const { error } = await supabase.from('profiles').update({ name: trimmed }).eq('id', id);
-    if (error) console.error('renameProfile', error);
+    if (error) reportError('renameProfile', error);
   }, []);
 
   const switchProfile = (id) => {
@@ -323,7 +324,7 @@ export function useMealPlan() {
     if (!activeProfileId) return;
     setSettings(prev => ({ ...(prev ?? {}), ...patch }));
     const { error } = await supabase.from('profile_settings').update(patch).eq('profile_id', activeProfileId);
-    if (error) console.error('updateSettings', error);
+    if (error) reportError('updateSettings', error);
   }, [activeProfileId]);
 
   const updateEatOutEnabled    = useCallback((v) => updateSettings({ eatout_enabled: v }),     [updateSettings]);
@@ -352,7 +353,7 @@ export function useMealPlan() {
       .from('meals')
       .insert({ profile_id: activeProfileId, name: name.trim(), category, tags })
       .select('*, recipe_ingredients(*)').single();
-    if (error) { console.error('addMeal', error); return; }
+    if (error) { reportError('addMeal', error); return; }
     setMeals(prev => [...prev, mealFromRow(data)]);
   }, [activeProfileId]);
 
@@ -368,7 +369,7 @@ export function useMealPlan() {
       .from('meals')
       .insert(rows)
       .select('*, recipe_ingredients(*)');
-    if (error) { console.error('addMeals', error); return; }
+    if (error) { reportError('addMeals', error); return; }
     setMeals(prev => [...prev, ...data.map(mealFromRow)]);
   }, [activeProfileId]);
 
@@ -377,7 +378,7 @@ export function useMealPlan() {
     // ON DELETE CASCADE on plans.meal_id wipes plan rows; refetch this month's plan
     const { error } = await supabase.from('meals').delete().eq('id', id);
     if (error) {
-      console.error('deleteMeal', error);
+      reportError('deleteMeal', error);
       return;
     }
     // Plan cache might have stale references in any month — drop entries that pointed to this meal
@@ -398,7 +399,7 @@ export function useMealPlan() {
     const patch = { name: name.trim(), category, tags: tags ?? [] };
     setMeals(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
     const { error } = await supabase.from('meals').update(patch).eq('id', id);
-    if (error) console.error('editMeal', error);
+    if (error) reportError('editMeal', error);
   }, []);
 
   const updateMealRecipe = useCallback(async (id, recipe) => {
@@ -412,11 +413,11 @@ export function useMealPlan() {
       instructions: recipe.instructions ?? [],
     };
     const { error: e1 } = await supabase.from('meals').update(metaPatch).eq('id', id);
-    if (e1) { console.error('updateMealRecipe meta', e1); return; }
+    if (e1) { reportError('updateMealRecipe meta', e1); return; }
 
     // Replace recipe_ingredients: delete then insert
     const { error: e2 } = await supabase.from('recipe_ingredients').delete().eq('meal_id', id);
-    if (e2) { console.error('updateMealRecipe wipe', e2); return; }
+    if (e2) { reportError('updateMealRecipe wipe', e2); return; }
 
     const rows = (recipe.ingredients ?? [])
       .filter(ing => (ing.name ?? '').trim())
@@ -429,7 +430,7 @@ export function useMealPlan() {
       }));
     if (rows.length) {
       const { error: e3 } = await supabase.from('recipe_ingredients').insert(rows);
-      if (e3) console.error('updateMealRecipe insert', e3);
+      if (e3) reportError('updateMealRecipe insert', e3);
     }
   }, []);
 
@@ -454,7 +455,7 @@ export function useMealPlan() {
       category:      entry.category || 'Pantry',
     };
     const { data, error } = await supabase.from('ingredients').insert(row).select().single();
-    if (error) { console.error('addLibIngredient', error); return; }
+    if (error) { reportError('addLibIngredient', error); return; }
     setIngredientLibrary(prev => [...prev, ingredientFromRow(data)]);
   }, [activeProfileId]);
 
@@ -468,13 +469,13 @@ export function useMealPlan() {
 
     setIngredientLibrary(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
     const { error } = await supabase.from('ingredients').update(dbPatch).eq('id', id);
-    if (error) console.error('editLibIngredient', error);
+    if (error) reportError('editLibIngredient', error);
   }, []);
 
   const deleteLibIngredient = useCallback(async (id) => {
     setIngredientLibrary(prev => prev.filter(i => i.id !== id));
     const { error } = await supabase.from('ingredients').delete().eq('id', id);
-    if (error) console.error('deleteLibIngredient', error);
+    if (error) reportError('deleteLibIngredient', error);
   }, []);
 
   // ── Plan actions ────────────────────────────────────────────────────────
@@ -485,7 +486,7 @@ export function useMealPlan() {
     if (value === null || value === undefined) {
       const { error } = await supabase.from('plans').delete()
         .eq('profile_id', activeProfileId).eq('year', year).eq('month', month).eq('day', day);
-      if (error) console.error('writeDay delete', error);
+      if (error) reportError('writeDay delete', error);
       return;
     }
     const row = {
@@ -495,7 +496,7 @@ export function useMealPlan() {
       special: (value === EAT_OUT || value === LEFTOVER) ? value : null,
     };
     const { error } = await supabase.from('plans').upsert(row);
-    if (error) console.error('writeDay upsert', error);
+    if (error) reportError('writeDay upsert', error);
   }, [activeProfileId]);
 
   const setPlanCacheDay = useCallback((day, value) => {
@@ -568,7 +569,7 @@ export function useMealPlan() {
     const { error: delErr } = await supabase.from('plans').delete()
       .eq('profile_id', activeProfileId).eq('year', viewYear).eq('month', viewMonth)
       .in('day', daysToDelete);
-    if (delErr) { console.error('regenerate delete', delErr); return; }
+    if (delErr) { reportError('regenerate delete', delErr); return; }
 
     const insertRows = Object.entries(newMonthPlan)
       .filter(([d, v]) => v !== null && v !== undefined && !lockedSet.has(+d))
@@ -581,7 +582,7 @@ export function useMealPlan() {
 
     if (insertRows.length) {
       const { error: insErr } = await supabase.from('plans').insert(insertRows);
-      if (insErr) console.error('regenerate insert', insErr);
+      if (insErr) reportError('regenerate insert', insErr);
     }
   }, [activeProfileId, activeMeals, eatOutEnabled, eatOutCount, eatOutSameNight, eatOutDayOfWeek,
       viewYear, viewMonth, planKey, lockedDaysByMonth, currentPlan]);
@@ -595,7 +596,7 @@ export function useMealPlan() {
     // Wipe and refill this month's plans to match restored state
     const { error: delErr } = await supabase.from('plans').delete()
       .eq('profile_id', activeProfileId).eq('year', viewYear).eq('month', viewMonth);
-    if (delErr) { console.error('undo delete', delErr); return; }
+    if (delErr) { reportError('undo delete', delErr); return; }
 
     const insertRows = Object.entries(restored)
       .filter(([, v]) => v !== null && v !== undefined)
@@ -607,7 +608,7 @@ export function useMealPlan() {
       }));
     if (insertRows.length) {
       const { error: insErr } = await supabase.from('plans').insert(insertRows);
-      if (insErr) console.error('undo insert', insErr);
+      if (insErr) reportError('undo insert', insErr);
     }
   }, [activeProfileId, lastPlan, planKey, viewYear, viewMonth]);
 
@@ -625,11 +626,11 @@ export function useMealPlan() {
     if (isLocked) {
       const { error } = await supabase.from('locked_days').delete()
         .eq('profile_id', activeProfileId).eq('year', viewYear).eq('month', viewMonth).eq('day', day);
-      if (error) console.error('unlock day', error);
+      if (error) reportError('unlock day', error);
     } else {
       const { error } = await supabase.from('locked_days')
         .insert({ profile_id: activeProfileId, year: viewYear, month: viewMonth, day });
-      if (error) console.error('lock day', error);
+      if (error) reportError('lock day', error);
     }
   }, [activeProfileId, lockedDaysByMonth, planKey, viewYear, viewMonth]);
 

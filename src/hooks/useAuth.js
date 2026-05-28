@@ -7,6 +7,10 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 export function useAuth() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  // True while the user has clicked a password-reset email link and hasn't
+  // yet set a new password. They're technically signed in (Supabase grants
+  // a recovery session) but the app should show the reset form, not the app.
+  const [inRecovery, setInRecovery] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -16,14 +20,16 @@ export function useAuth() {
       setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
+      if (event === 'PASSWORD_RECOVERY') setInRecovery(true);
     });
 
     return () => sub.subscription.unsubscribe();
   }, []);
 
   const user = session?.user ?? null;
+  const exitRecovery = () => setInRecovery(false);
 
   // PLACEHOLDER paywall check. When Stripe is wired, replace this body with
   // a query against public.subscriptions (or a cached value from a separate
@@ -31,5 +37,5 @@ export function useAuth() {
   // does not need to change.
   const isMember = !!user;
 
-  return { session, user, isMember, loading };
+  return { session, user, isMember, loading, inRecovery, exitRecovery };
 }

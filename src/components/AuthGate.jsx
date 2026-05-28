@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { toast } from '../lib/toast';
 
 export default function AuthGate({ children }) {
-  const { user, isMember, loading } = useAuth();
+  const { user, isMember, loading, inRecovery, exitRecovery } = useAuth();
 
   if (!isSupabaseConfigured) {
     return (
@@ -27,45 +28,52 @@ export default function AuthGate({ children }) {
     );
   }
 
+  // Recovery flow takes precedence over both signed-out and signed-in states:
+  // the user IS signed in via a recovery session, but the only valid next
+  // action is to set a new password.
+  if (inRecovery) return <ResetPasswordForm onDone={exitRecovery} />;
+
   if (!user) return <AuthForm />;
 
-  // Signed-in but not a paying member → paywall screen. Right now isMember
-  // is a stub that returns true for every signed-in user, so this branch is
-  // dead code until Stripe is wired. It's here so the shape is right when
-  // that day comes — flip one line in useAuth and this becomes the paywall.
+  // Signed-in but not a paying member → paywall screen. isMember is stubbed
+  // to !!user right now so this branch is dead until Stripe is wired.
   if (!isMember) return <MembershipRequired />;
 
   return children;
 }
 
-// ── Auth form ────────────────────────────────────────────────────────────────
+// ── Sign in / sign up form ───────────────────────────────────────────────────
 
 function AuthForm() {
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+  const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
 
+  const clearMessages = () => { setError(null); setInfo(null); };
+
   const submit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setInfo(null);
+    clearMessages();
     setBusy(true);
     try {
       if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // onAuthStateChange will rerender AuthGate — no router needed.
-      } else {
+      } else if (mode === 'signup') {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        // If email confirmation is ON (Supabase default), the session is null
-        // here and the user must click the link in their email to confirm.
         if (!data.session) {
           setInfo('Check your email for a confirmation link to finish signing up.');
         }
+      } else if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        setInfo('If that email is registered, a password reset link is on its way.');
       }
     } catch (err) {
       setError(err.message || 'Something went wrong.');
@@ -73,6 +81,14 @@ function AuthForm() {
       setBusy(false);
     }
   };
+
+  const switchTo = (next) => { setMode(next); clearMessages(); };
+
+  const title = {
+    signin: 'Sign In',
+    signup: 'Create Account',
+    forgot: 'Send Reset Link',
+  }[mode];
 
   return (
     <div className="auth-shell">
@@ -93,44 +109,109 @@ function AuthForm() {
             />
           </label>
 
-          <label className="auth-label">
-            Password
-            <input
-              type="password"
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              required
-              minLength={6}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              disabled={busy}
-            />
-          </label>
+          {mode !== 'forgot' && (
+            <label className="auth-label">
+              Password
+              <input
+                type="password"
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                required
+                minLength={6}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                disabled={busy}
+              />
+            </label>
+          )}
 
           {error && <div className="auth-error">{error}</div>}
           {info && <div className="auth-info">{info}</div>}
 
           <button type="submit" className="btn-primary auth-submit" disabled={busy}>
-            {busy ? '…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {busy ? '…' : title}
           </button>
         </form>
 
         <div className="auth-toggle">
-          {mode === 'signin' ? (
+          {mode === 'signin' && (
             <>
-              Need an account?{' '}
-              <button className="auth-link" onClick={() => { setMode('signup'); setError(null); setInfo(null); }}>
-                Sign up
-              </button>
+              <div>
+                Need an account?{' '}
+                <button className="auth-link" onClick={() => switchTo('signup')}>Sign up</button>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <button className="auth-link" onClick={() => switchTo('forgot')}>Forgot password?</button>
+              </div>
             </>
-          ) : (
+          )}
+          {mode === 'signup' && (
             <>
               Already have one?{' '}
-              <button className="auth-link" onClick={() => { setMode('signin'); setError(null); setInfo(null); }}>
-                Sign in
-              </button>
+              <button className="auth-link" onClick={() => switchTo('signin')}>Sign in</button>
+            </>
+          )}
+          {mode === 'forgot' && (
+            <>
+              Remembered it?{' '}
+              <button className="auth-link" onClick={() => switchTo('signin')}>Back to sign in</button>
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── New-password form (after clicking reset link) ────────────────────────────
+
+function ResetPasswordForm({ onDone }) {
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      toast.success('Password updated.');
+      onDone();
+    } catch (err) {
+      setError(err.message || 'Could not update password.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="auth-shell">
+      <div className="auth-card">
+        <h1 className="auth-title">HOME</h1>
+        <p className="auth-subtitle">Set a new password</p>
+
+        <form onSubmit={submit} className="auth-form">
+          <label className="auth-label">
+            New password
+            <input
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={6}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              disabled={busy}
+              autoFocus
+            />
+          </label>
+
+          {error && <div className="auth-error">{error}</div>}
+
+          <button type="submit" className="btn-primary auth-submit" disabled={busy}>
+            {busy ? '…' : 'Update Password'}
+          </button>
+        </form>
       </div>
     </div>
   );
