@@ -5,13 +5,20 @@ import { EAT_OUT, LEFTOVER } from '../hooks/useMealPlan';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEKDAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const MONTH_NAMES_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function DayCell({ day, planValue, meal, locked, dragDay, onDayClick, onReassign, onDragStart, onDragOver, onDrop }) {
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function DayCell({
+  date, planValue, meal, locked, dragKey, onDayClick, onReassign,
+  onDragStart, onDragOver, onDrop, showWeekday,
+}) {
   const isEatOut = planValue === EAT_OUT;
   const isLeftover = planValue === LEFTOVER;
   const cat = meal ? CATEGORIES[meal.category] : null;
-  const isDragTarget = dragDay !== null && dragDay !== day;
+  const key = dateKey(date);
+  const isDragTarget = dragKey !== null && dragKey !== key;
   const showShuffle = !locked && !isEatOut && !isLeftover;
 
   return (
@@ -25,13 +32,14 @@ function DayCell({ day, planValue, meal, locked, dragDay, onDayClick, onReassign
       ].filter(Boolean).join(' ')}
       style={!isEatOut && !isLeftover && cat ? { borderColor: cat.color } : {}}
       draggable={!locked}
-      onClick={() => onDayClick(day)}
-      onDragStart={e => { e.stopPropagation(); onDragStart(day); }}
-      onDragOver={e => { e.preventDefault(); onDragOver(day); }}
-      onDrop={e => { e.stopPropagation(); onDrop(day); }}
+      onClick={() => onDayClick(date)}
+      onDragStart={e => { e.stopPropagation(); onDragStart(key); }}
+      onDragOver={e => { e.preventDefault(); onDragOver(key); }}
+      onDrop={e => { e.stopPropagation(); onDrop(date); }}
     >
       <div className="day-number">
-        {day}
+        {showWeekday && <span className="day-weekday">{WEEKDAYS[date.getDay()]}</span>}
+        <span>{date.getDate()}</span>
         {locked && <span className="lock-indicator" title="Locked">🔒</span>}
       </div>
 
@@ -52,94 +60,115 @@ function DayCell({ day, planValue, meal, locked, dragDay, onDayClick, onReassign
         <button
           className="day-shuffle-btn"
           title="Shuffle meal"
-          onClick={e => { e.stopPropagation(); onReassign(day); }}
+          onClick={e => { e.stopPropagation(); onReassign(date); }}
         >↺</button>
       )}
     </div>
   );
 }
 
-function exportPlanTxt(viewYear, viewMonth, currentPlan, mealMap) {
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const lines = [`${MONTH_NAMES_FULL[viewMonth]} ${viewYear} — Meal Plan`, ''];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const v = currentPlan[d];
+// ── Exports ──────────────────────────────────────────────────────────────────
+
+function exportPlanTxt(visibleDays, visiblePlan, mealMap, rangeLabel) {
+  const lines = [`${rangeLabel} — Meal Plan`, ''];
+  for (const d of visibleDays) {
+    const v = visiblePlan[dateKey(d)];
     let label = 'No meal';
     if (v === EAT_OUT) label = 'Eating Out';
     else if (v === LEFTOVER) label = 'Leftovers';
     else if (mealMap[v]) label = mealMap[v].name;
-    const date = new Date(viewYear, viewMonth, d);
-    lines.push(`${WEEKDAY_NAMES[date.getDay()]}, ${MONTH_NAMES_FULL[viewMonth]} ${d}: ${label}`);
+    lines.push(`${WEEKDAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}: ${label}`);
   }
-  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `meal-plan-${viewYear}-${String(viewMonth + 1).padStart(2, '0')}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+  download(lines.join('\n'), `meal-plan-${dateKey(visibleDays[0])}.txt`, 'text/plain');
 }
 
-function exportPlanCsv(viewYear, viewMonth, currentPlan, mealMap) {
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const rows = [['Day', 'Date', 'Weekday', 'Meal', 'Category']];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const v = currentPlan[d];
-    const date = new Date(viewYear, viewMonth, d);
-    const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const weekday = WEEKDAY_NAMES[date.getDay()];
+function exportPlanCsv(visibleDays, visiblePlan, mealMap) {
+  const rows = [['Date', 'Weekday', 'Meal', 'Category']];
+  for (const d of visibleDays) {
+    const v = visiblePlan[dateKey(d)];
     let meal = 'No meal', category = '';
-    if (v === EAT_OUT) { meal = 'Eating Out'; }
-    else if (v === LEFTOVER) { meal = 'Leftovers'; }
+    if (v === EAT_OUT) meal = 'Eating Out';
+    else if (v === LEFTOVER) meal = 'Leftovers';
     else if (mealMap[v]) { meal = mealMap[v].name; category = mealMap[v].category; }
-    rows.push([String(d).padStart(2, '0'), dateStr, weekday, meal, category]);
+    rows.push([dateKey(d), WEEKDAY_NAMES[d.getDay()], meal, category]);
   }
   const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+  download(csv, `meal-plan-${dateKey(visibleDays[0])}.csv`, 'text/csv');
+}
+
+function download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `meal-plan-${viewYear}-${String(viewMonth + 1).padStart(2, '0')}.csv`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
 
+// ── CalendarView ─────────────────────────────────────────────────────────────
+
 export default function CalendarView({
-  viewYear, viewMonth, currentPlan, meals,
+  viewMode, viewLabel, visibleDays, visiblePlan, visibleLocked,
+  viewYear, viewMonth, meals,
   eatOutEnabled, eatOutCount, eatOutSameNight, eatOutDayOfWeek,
-  currentLocked, enabledCategories, canUndo,
-  onRegenerate, onUndo, onReassign, onToggleCategory,
+  enabledCategories, canUndo,
+  onSetViewMode, onRegenerate, onUndo, onReassign, onToggleCategory,
   onPrev, onNext,
   onEatOutEnabledChange, onEatOutCountChange,
   onEatOutSameNightChange, onEatOutDayOfWeekChange,
   onDayClick, onSwapDays,
 }) {
-  const [dragDay, setDragDay] = useState(null);
+  const [dragKey, setDragKey] = useState(null);
   const [showExport, setShowExport] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const mealMap = Object.fromEntries(meals.map(m => [m.id, m]));
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const eatOutNights = Object.values(visiblePlan).filter(v => v === EAT_OUT).length;
+  const visibleByKey = Object.fromEntries(visibleDays.map(d => [dateKey(d), d]));
 
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  const eatOutNights = Object.values(currentPlan).filter(v => v === EAT_OUT).length;
-
-  const handleDrop = (targetDay) => {
-    if (dragDay !== null && dragDay !== targetDay) onSwapDays(dragDay, targetDay);
-    setDragDay(null);
+  const handleDrop = (targetDate) => {
+    if (dragKey !== null && dragKey !== dateKey(targetDate) && visibleByKey[dragKey]) {
+      onSwapDays(visibleByKey[dragKey], targetDate);
+    }
+    setDragKey(null);
   };
 
+  // Eat-out count cap depends on visible range length, not just month days.
+  const countMax = visibleDays.length || 31;
+  const countLabel = viewMode === 'month'
+    ? 'Nights per month:'
+    : viewMode === 'week'
+      ? 'Nights this week:'
+      : 'Nights this period:';
+
   return (
-    <div className="calendar-view" onDragEnd={() => setDragDay(null)}>
+    <div className="calendar-view" onDragEnd={() => setDragKey(null)}>
 
       <div className="calendar-header">
         <button className="btn-nav" onClick={onPrev}>‹</button>
-        <div className="month-title">{MONTH_NAMES[viewMonth]} {viewYear}</div>
+        <div className="month-title">{viewLabel}</div>
         <button className="btn-nav" onClick={onNext}>›</button>
+      </div>
+
+      <div className="view-mode-row">
+        <div className="view-mode-toggle" role="tablist">
+          {[
+            { id: 'month',  label: 'Month' },
+            { id: 'biweek', label: 'Biweek' },
+            { id: 'week',   label: 'Week' },
+          ].map(opt => (
+            <button
+              key={opt.id}
+              role="tab"
+              aria-selected={viewMode === opt.id}
+              className={`view-mode-btn${viewMode === opt.id ? ' active' : ''}`}
+              onClick={() => onSetViewMode(opt.id)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="calendar-toolbar">
@@ -178,21 +207,21 @@ export default function CalendarView({
                         </label>
                       ) : (
                         <label className="count-label">
-                          <span>Nights per month:</span>
+                          <span>{countLabel}</span>
                           <input
                             type="number"
                             className="count-input"
                             min={1}
-                            max={daysInMonth}
+                            max={countMax}
                             value={eatOutCount}
-                            onChange={e => onEatOutCountChange(Math.min(daysInMonth, Math.max(1, Number(e.target.value))))}
+                            onChange={e => onEatOutCountChange(Math.min(countMax, Math.max(1, Number(e.target.value))))}
                           />
                         </label>
                       )}
                     </div>
                     {eatOutNights > 0 && (
                       <div className="settings-row">
-                        <span className="eat-out-badge">{eatOutNights} eat-out night{eatOutNights !== 1 ? 's' : ''} this month</span>
+                        <span className="eat-out-badge">{eatOutNights} eat-out night{eatOutNights !== 1 ? 's' : ''} visible</span>
                       </div>
                     )}
                   </>
@@ -216,10 +245,10 @@ export default function CalendarView({
             </button>
             {showExport && (
               <div className="toolbar-dropdown export-dropdown">
-                <button className="dropdown-item" onClick={() => { exportPlanTxt(viewYear, viewMonth, currentPlan, mealMap); setShowExport(false); }}>
+                <button className="dropdown-item" onClick={() => { exportPlanTxt(visibleDays, visiblePlan, mealMap, viewLabel); setShowExport(false); }}>
                   Export as .txt
                 </button>
-                <button className="dropdown-item" onClick={() => { exportPlanCsv(viewYear, viewMonth, currentPlan, mealMap); setShowExport(false); }}>
+                <button className="dropdown-item" onClick={() => { exportPlanCsv(visibleDays, visiblePlan, mealMap); setShowExport(false); }}>
                   Export as .csv
                 </button>
               </div>
@@ -249,32 +278,109 @@ export default function CalendarView({
         })}
       </div>
 
+      {viewMode === 'month' ? (
+        <MonthGrid
+          viewYear={viewYear}
+          viewMonth={viewMonth}
+          visiblePlan={visiblePlan}
+          visibleLocked={visibleLocked}
+          mealMap={mealMap}
+          dragKey={dragKey}
+          onDayClick={onDayClick}
+          onReassign={onReassign}
+          onDragStart={setDragKey}
+          onDrop={handleDrop}
+        />
+      ) : (
+        <StripGrid
+          visibleDays={visibleDays}
+          visiblePlan={visiblePlan}
+          visibleLocked={visibleLocked}
+          mealMap={mealMap}
+          dragKey={dragKey}
+          rowsOf={viewMode === 'biweek' ? 7 : 7}
+          onDayClick={onDayClick}
+          onReassign={onReassign}
+          onDragStart={setDragKey}
+          onDrop={handleDrop}
+        />
+      )}
+
+    </div>
+  );
+}
+
+// ── Month grid (existing layout) ─────────────────────────────────────────────
+
+function MonthGrid({ viewYear, viewMonth, visiblePlan, visibleLocked, mealMap, dragKey, onDayClick, onReassign, onDragStart, onDrop }) {
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(viewYear, viewMonth, d));
+
+  return (
+    <>
       <div className="weekday-row">
         {WEEKDAYS.map(d => <div key={d} className="weekday-label">{d}</div>)}
       </div>
-
       <div className="calendar-grid">
-        {cells.map((day, i) =>
-          day === null
+        {cells.map((date, i) =>
+          date === null
             ? <div key={`empty-${i}`} className="day-cell empty" />
             : (
               <DayCell
-                key={day}
-                day={day}
-                planValue={currentPlan[day]}
-                meal={mealMap[currentPlan[day]] || null}
-                locked={currentLocked.has(day)}
-                dragDay={dragDay}
+                key={dateKey(date)}
+                date={date}
+                planValue={visiblePlan[dateKey(date)]}
+                meal={mealMap[visiblePlan[dateKey(date)]] || null}
+                locked={visibleLocked.has(dateKey(date))}
+                dragKey={dragKey}
                 onDayClick={onDayClick}
                 onReassign={onReassign}
-                onDragStart={setDragDay}
+                onDragStart={onDragStart}
                 onDragOver={() => {}}
-                onDrop={handleDrop}
+                onDrop={onDrop}
               />
             )
         )}
       </div>
+    </>
+  );
+}
 
+// ── Strip grid (week / biweek) ───────────────────────────────────────────────
+
+function StripGrid({ visibleDays, visiblePlan, visibleLocked, mealMap, dragKey, rowsOf, onDayClick, onReassign, onDragStart, onDrop }) {
+  // Render rows of `rowsOf` days each. Biweek = 2 rows of 7.
+  const rows = [];
+  for (let i = 0; i < visibleDays.length; i += rowsOf) {
+    rows.push(visibleDays.slice(i, i + rowsOf));
+  }
+
+  return (
+    <div className="calendar-strip">
+      {rows.map((row, ri) => (
+        <div key={ri} className="calendar-strip-row">
+          {row.map(date => (
+            <DayCell
+              key={dateKey(date)}
+              date={date}
+              planValue={visiblePlan[dateKey(date)]}
+              meal={mealMap[visiblePlan[dateKey(date)]] || null}
+              locked={visibleLocked.has(dateKey(date))}
+              dragKey={dragKey}
+              onDayClick={onDayClick}
+              onReassign={onReassign}
+              onDragStart={onDragStart}
+              onDragOver={() => {}}
+              onDrop={onDrop}
+              showWeekday
+            />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

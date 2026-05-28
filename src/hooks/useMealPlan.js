@@ -8,12 +8,30 @@ export const LEFTOVER = 'LEFTOVER';
 
 const DEFAULT_CATEGORIES = ['Beef','Chicken','Pork','Seafood','Vegetarian','Other'];
 
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
 // ── localStorage (only for things we explicitly chose to keep local) ────────
 const LOCAL = {
   darkMode:       'home_dark_mode',
   activeProfile:  'home_active_profile',
+  viewMode:       'home_view_mode',
   groceryChecked: (profileId) => `home_grocery_${profileId}`,
 };
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+
+function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function startOfWeek(d) {
+  // Sunday-anchored to match the existing month grid (US convention).
+  const x = startOfDay(d);
+  x.setDate(x.getDate() - x.getDay());
+  return x;
+}
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function loadLocal(key, fallback) {
   try {
@@ -43,39 +61,39 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function weekdayOccurrences(year, month, dow) {
-  const days = [];
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  for (let d = 1; d <= daysInMonth; d++) {
-    if (new Date(year, month, d).getDay() === dow) days.push(d);
+// Generates a plan over an explicit list of dates. Returns { dateKey: value }
+// — keys are 'YYYY-MM-DD' strings so cross-month ranges work cleanly.
+//
+//   dates           — Date[] to generate for
+//   eatOutCount     — number of eat-out nights to insert
+//   sameNight       — if true, eat out happens on every visible day matching dayOfWeek
+//   dayOfWeek       — 0=Sun..6=Sat
+//   lockedKeySet    — Set of dateKey() strings that must keep existing values
+//   existingByKey   — { dateKey: value } values to preserve for locked days
+function generatePlanForDates(meals, dates, eatOutCount, sameNight, dayOfWeek, lockedKeySet, existingByKey) {
+  const plan = {};
+  // Carry over locked-day values verbatim
+  for (const d of dates) {
+    const k = dateKey(d);
+    if (lockedKeySet.has(k) && existingByKey[k] !== undefined) plan[k] = existingByKey[k];
   }
-  return days;
-}
 
-function generatePlan(meals, year, month, eatOutCount = 0, sameNight = false, dayOfWeek = 5, lockedValues = {}) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const lockedDayNums = new Set(Object.keys(lockedValues).map(Number));
+  const unlocked = dates.filter(d => !lockedKeySet.has(dateKey(d)));
 
-  let eatOutDays;
+  let eatOutSet;
   if (sameNight) {
-    eatOutDays = new Set(weekdayOccurrences(year, month, dayOfWeek).filter(d => !lockedDayNums.has(d)));
+    eatOutSet = new Set(unlocked.filter(d => d.getDay() === dayOfWeek).map(dateKey));
   } else {
-    const available = shuffle(
-      Array.from({ length: daysInMonth }, (_, i) => i + 1).filter(d => !lockedDayNums.has(d))
-    );
-    eatOutDays = new Set(available.slice(0, eatOutCount));
+    eatOutSet = new Set(shuffle(unlocked).slice(0, eatOutCount).map(dateKey));
   }
 
-  const mealDays = [];
-  const plan = { ...lockedValues };
-  for (let d = 1; d <= daysInMonth; d++) {
-    if (lockedDayNums.has(d)) continue;
-    if (eatOutDays.has(d)) plan[d] = EAT_OUT;
-    else mealDays.push(d);
+  const mealDays = unlocked.filter(d => !eatOutSet.has(dateKey(d)));
+  for (const d of unlocked) {
+    if (eatOutSet.has(dateKey(d))) plan[dateKey(d)] = EAT_OUT;
   }
 
   if (meals.length === 0) {
-    for (const d of mealDays) plan[d] = null;
+    for (const d of mealDays) plan[dateKey(d)] = null;
     return plan;
   }
 
@@ -90,7 +108,7 @@ function generatePlan(meals, year, month, eatOutCount = 0, sameNight = false, da
     pool = shuffle(expanded).slice(0, needed);
   }
 
-  mealDays.forEach((d, i) => { plan[d] = pool[i]?.id ?? null; });
+  mealDays.forEach((d, i) => { plan[dateKey(d)] = pool[i]?.id ?? null; });
   return plan;
 }
 
@@ -180,10 +198,27 @@ export function useMealPlan() {
   // Loading
   const [loading, setLoading] = useState(true);
 
-  // Calendar view
+  // Calendar view: viewMode + viewAnchor (Date). Anchor is the first day of
+  // the visible range — first of month for 'month', Sunday of week for week/
+  // biweek. Stepping prev/next adjusts the anchor by view size.
   const today = new Date();
-  const [viewYear, setViewYear]   = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewMode, setViewMode] = useState(() => loadLocal(LOCAL.viewMode, 'month'));
+  const [viewAnchor, setViewAnchor] = useState(() => {
+    const mode = loadLocal(LOCAL.viewMode, 'month');
+    return mode === 'month' ? startOfMonth(today) : startOfWeek(today);
+  });
+
+  const changeViewMode = (mode) => {
+    setViewMode(mode);
+    saveLocal(LOCAL.viewMode, mode);
+    // Re-anchor: keep the user looking at roughly the same time period.
+    setViewAnchor(prev => mode === 'month' ? startOfMonth(prev) : startOfWeek(prev));
+  };
+
+  // viewYear/viewMonth are derived from the anchor's month — used by
+  // GroceryList (still month-scoped) and the month-grid renderer.
+  const viewYear = viewAnchor.getFullYear();
+  const viewMonth = viewAnchor.getMonth();
 
   // ── Reload profile data on profile switch ───────────────────────────────
   // Not wrapped in useCallback: React Compiler memoizes for us, and useCallback
@@ -258,6 +293,48 @@ export function useMealPlan() {
   const planKey      = `${viewYear}-${viewMonth}`;
   const currentPlan  = useMemo(() => plansByMonth[planKey] || {}, [plansByMonth, planKey]);
   const currentLocked = useMemo(() => new Set(lockedDaysByMonth[planKey] || []), [lockedDaysByMonth, planKey]);
+
+  // Visible-range derivations (used by CalendarView).
+  const visibleDays = useMemo(() => {
+    if (viewMode === 'month') {
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      return Array.from({ length: daysInMonth }, (_, i) => new Date(viewYear, viewMonth, i + 1));
+    }
+    const len = viewMode === 'biweek' ? 14 : 7;
+    return Array.from({ length: len }, (_, i) => addDays(viewAnchor, i));
+  }, [viewMode, viewAnchor, viewYear, viewMonth]);
+
+  const visiblePlan = useMemo(() => {
+    const out = {};
+    for (const d of visibleDays) {
+      const monthMap = plansByMonth[`${d.getFullYear()}-${d.getMonth()}`] || {};
+      const v = monthMap[d.getDate()];
+      if (v !== undefined) out[dateKey(d)] = v;
+    }
+    return out;
+  }, [visibleDays, plansByMonth]);
+
+  const visibleLocked = useMemo(() => {
+    const set = new Set();
+    for (const d of visibleDays) {
+      const arr = lockedDaysByMonth[`${d.getFullYear()}-${d.getMonth()}`] || [];
+      if (arr.includes(d.getDate())) set.add(dateKey(d));
+    }
+    return set;
+  }, [visibleDays, lockedDaysByMonth]);
+
+  const viewLabel = useMemo(() => {
+    if (viewMode === 'month') return `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+    const first = visibleDays[0];
+    const last  = visibleDays[visibleDays.length - 1];
+    if (first.getFullYear() === last.getFullYear() && first.getMonth() === last.getMonth()) {
+      return `${MONTH_NAMES[first.getMonth()]} ${first.getDate()} – ${last.getDate()}, ${first.getFullYear()}`;
+    }
+    if (first.getFullYear() === last.getFullYear()) {
+      return `${MONTH_NAMES[first.getMonth()]} ${first.getDate()} – ${MONTH_NAMES[last.getMonth()]} ${last.getDate()}, ${first.getFullYear()}`;
+    }
+    return `${MONTH_NAMES[first.getMonth()]} ${first.getDate()}, ${first.getFullYear()} – ${MONTH_NAMES[last.getMonth()]} ${last.getDate()}, ${last.getFullYear()}`;
+  }, [viewMode, viewMonth, viewYear, visibleDays]);
 
   const enabledCategories = settings?.enabled_categories ?? DEFAULT_CATEGORIES;
   const eatOutEnabled     = settings?.eatout_enabled ?? false;
@@ -479,8 +556,9 @@ export function useMealPlan() {
   }, []);
 
   // ── Plan actions ────────────────────────────────────────────────────────
+  // All take a Date so they work across month boundaries (e.g. a week view
+  // spanning Mar 30 → Apr 5).
 
-  // Write a single day's value (meal_id, special, or null=clear)
   const writeDay = useCallback(async (year, month, day, value) => {
     if (!activeProfileId) return;
     if (value === null || value === undefined) {
@@ -499,140 +577,204 @@ export function useMealPlan() {
     if (error) reportError('writeDay upsert', error);
   }, [activeProfileId]);
 
-  const setPlanCacheDay = useCallback((day, value) => {
+  const setPlanCacheDate = useCallback((date, value) => {
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    const day = date.getDate();
     setPlansByMonth(prev => {
-      const monthMap = { ...(prev[planKey] || {}) };
+      const monthMap = { ...(prev[key] || {}) };
       if (value === null || value === undefined) delete monthMap[day];
       else monthMap[day] = value;
-      return { ...prev, [planKey]: monthMap };
+      return { ...prev, [key]: monthMap };
     });
-  }, [planKey]);
+  }, []);
 
-  const reassignDay = useCallback((day, mealId) => {
+  const getPlanValueForDate = (date) => {
+    const monthMap = plansByMonth[`${date.getFullYear()}-${date.getMonth()}`] || {};
+    return monthMap[date.getDate()];
+  };
+
+  const reassignDay = useCallback((date, mealId) => {
     const id = mealId !== undefined ? mealId : (activeMeals.length > 0 ? pickRandom(activeMeals).id : null);
-    setPlanCacheDay(day, id);
-    writeDay(viewYear, viewMonth, day, id);
-  }, [activeMeals, viewYear, viewMonth, setPlanCacheDay, writeDay]);
+    setPlanCacheDate(date, id);
+    writeDay(date.getFullYear(), date.getMonth(), date.getDate(), id);
+  }, [activeMeals, setPlanCacheDate, writeDay]);
 
-  const swapDays = useCallback((dayA, dayB) => {
-    const a = currentPlan[dayA] ?? null;
-    const b = currentPlan[dayB] ?? null;
-    setPlanCacheDay(dayA, b);
-    setPlanCacheDay(dayB, a);
-    writeDay(viewYear, viewMonth, dayA, b);
-    writeDay(viewYear, viewMonth, dayB, a);
-  }, [currentPlan, viewYear, viewMonth, setPlanCacheDay, writeDay]);
+  const swapDays = useCallback((dateA, dateB) => {
+    const a = getPlanValueForDate(dateA) ?? null;
+    const b = getPlanValueForDate(dateB) ?? null;
+    setPlanCacheDate(dateA, b);
+    setPlanCacheDate(dateB, a);
+    writeDay(dateA.getFullYear(), dateA.getMonth(), dateA.getDate(), b);
+    writeDay(dateB.getFullYear(), dateB.getMonth(), dateB.getDate(), a);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plansByMonth, setPlanCacheDate, writeDay]);
 
-  const toggleEatOut = useCallback((day) => {
-    const current = currentPlan[day];
+  const toggleEatOut = useCallback((date) => {
+    const current = getPlanValueForDate(date);
     const next = current === EAT_OUT
       ? (activeMeals.length > 0 ? pickRandom(activeMeals).id : null)
       : EAT_OUT;
-    setPlanCacheDay(day, next);
-    writeDay(viewYear, viewMonth, day, next);
-  }, [currentPlan, activeMeals, viewYear, viewMonth, setPlanCacheDay, writeDay]);
+    setPlanCacheDate(date, next);
+    writeDay(date.getFullYear(), date.getMonth(), date.getDate(), next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plansByMonth, activeMeals, setPlanCacheDate, writeDay]);
 
-  const toggleLeftover = useCallback((day) => {
-    const current = currentPlan[day];
+  const toggleLeftover = useCallback((date) => {
+    const current = getPlanValueForDate(date);
     const next = current === LEFTOVER
       ? (activeMeals.length > 0 ? pickRandom(activeMeals).id : null)
       : LEFTOVER;
-    setPlanCacheDay(day, next);
-    writeDay(viewYear, viewMonth, day, next);
-  }, [currentPlan, activeMeals, viewYear, viewMonth, setPlanCacheDay, writeDay]);
+    setPlanCacheDate(date, next);
+    writeDay(date.getFullYear(), date.getMonth(), date.getDate(), next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plansByMonth, activeMeals, setPlanCacheDate, writeDay]);
 
-  const clearDay = useCallback((day) => {
-    setPlanCacheDay(day, null);
-    writeDay(viewYear, viewMonth, day, null);
-  }, [viewYear, viewMonth, setPlanCacheDay, writeDay]);
+  const clearDay = useCallback((date) => {
+    setPlanCacheDate(date, null);
+    writeDay(date.getFullYear(), date.getMonth(), date.getDate(), null);
+  }, [setPlanCacheDate, writeDay]);
+
+  // Groups an array of dates by month key for batched DB operations.
+  const groupByMonth = (dates) => {
+    const out = {};
+    for (const d of dates) {
+      const k = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!out[k]) out[k] = { year: d.getFullYear(), month: d.getMonth(), days: [] };
+      out[k].days.push(d.getDate());
+    }
+    return out;
+  };
 
   const regenerate = useCallback(async () => {
-    if (!activeProfileId || activeMeals.length === 0) return;
+    if (!activeProfileId || activeMeals.length === 0 || visibleDays.length === 0) return;
     const count = eatOutEnabled ? eatOutCount : 0;
-    const lockedArr = lockedDaysByMonth[planKey] || [];
-    const lockedValues = {};
-    lockedArr.forEach(d => { lockedValues[d] = currentPlan[d] ?? null; });
 
-    const newMonthPlan = generatePlan(
-      activeMeals, viewYear, viewMonth, count,
-      eatOutEnabled && eatOutSameNight, eatOutDayOfWeek, lockedValues
+    // Snapshot the visible range's current values for undo (per-date keys).
+    const snapshot = {};
+    for (const d of visibleDays) {
+      const v = (plansByMonth[`${d.getFullYear()}-${d.getMonth()}`] || {})[d.getDate()];
+      if (v !== undefined) snapshot[dateKey(d)] = v;
+    }
+
+    const lockedKeys = new Set();
+    for (const d of visibleDays) if (visibleLocked.has(dateKey(d))) lockedKeys.add(dateKey(d));
+
+    const newByKey = generatePlanForDates(
+      activeMeals, visibleDays, count,
+      eatOutEnabled && eatOutSameNight, eatOutDayOfWeek,
+      lockedKeys, snapshot
     );
 
-    setLastPlan(prev => ({ ...prev, [planKey]: currentPlan }));
-    setPlansByMonth(prev => ({ ...prev, [planKey]: newMonthPlan }));
+    // Optimistic local cache update — merge each new key into plansByMonth.
+    setLastPlan(prev => ({ ...prev, [`__range_${dateKey(visibleDays[0])}_${dateKey(visibleDays[visibleDays.length - 1])}`]: snapshot }));
+    setPlansByMonth(prev => {
+      const next = { ...prev };
+      for (const d of visibleDays) {
+        const mk = `${d.getFullYear()}-${d.getMonth()}`;
+        const monthMap = { ...(next[mk] || {}) };
+        const v = newByKey[dateKey(d)];
+        if (v === null || v === undefined) delete monthMap[d.getDate()];
+        else monthMap[d.getDate()] = v;
+        next[mk] = monthMap;
+      }
+      return next;
+    });
 
-    // DB: delete all unlocked days for this month, then upsert the new ones
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const lockedSet = new Set(lockedArr);
-    const daysToDelete = Array.from({ length: daysInMonth }, (_, i) => i + 1).filter(d => !lockedSet.has(d));
+    // DB: delete all unlocked visible days (per-month batched), then insert.
+    const unlockedVisibleDates = visibleDays.filter(d => !visibleLocked.has(dateKey(d)));
+    const byMonth = groupByMonth(unlockedVisibleDates);
+    for (const { year, month, days } of Object.values(byMonth)) {
+      const { error } = await supabase.from('plans').delete()
+        .eq('profile_id', activeProfileId).eq('year', year).eq('month', month).in('day', days);
+      if (error) { reportError('regenerate delete', error); return; }
+    }
 
-    const { error: delErr } = await supabase.from('plans').delete()
-      .eq('profile_id', activeProfileId).eq('year', viewYear).eq('month', viewMonth)
-      .in('day', daysToDelete);
-    if (delErr) { reportError('regenerate delete', delErr); return; }
-
-    const insertRows = Object.entries(newMonthPlan)
-      .filter(([d, v]) => v !== null && v !== undefined && !lockedSet.has(+d))
-      .map(([d, v]) => ({
+    const insertRows = visibleDays
+      .filter(d => !visibleLocked.has(dateKey(d)))
+      .map(d => ({ d, v: newByKey[dateKey(d)] }))
+      .filter(x => x.v !== null && x.v !== undefined)
+      .map(({ d, v }) => ({
         profile_id: activeProfileId,
-        year: viewYear, month: viewMonth, day: +d,
+        year: d.getFullYear(), month: d.getMonth(), day: d.getDate(),
         meal_id: (v === EAT_OUT || v === LEFTOVER) ? null : v,
         special: (v === EAT_OUT || v === LEFTOVER) ? v : null,
       }));
-
     if (insertRows.length) {
-      const { error: insErr } = await supabase.from('plans').insert(insertRows);
-      if (insErr) reportError('regenerate insert', insErr);
+      const { error } = await supabase.from('plans').insert(insertRows);
+      if (error) reportError('regenerate insert', error);
     }
   }, [activeProfileId, activeMeals, eatOutEnabled, eatOutCount, eatOutSameNight, eatOutDayOfWeek,
-      viewYear, viewMonth, planKey, lockedDaysByMonth, currentPlan]);
+      visibleDays, visibleLocked, plansByMonth]);
+
+  // Undo key matches what regenerate wrote — anchored on the visible range
+  // at the time. If the user changes view mode/anchor between regenerate and
+  // undo, the undo button won't show (canUndo below is false).
+  const undoKey = visibleDays.length > 0
+    ? `__range_${dateKey(visibleDays[0])}_${dateKey(visibleDays[visibleDays.length - 1])}`
+    : null;
+  const canUndo = !!(undoKey && lastPlan[undoKey]);
 
   const undoRegenerate = useCallback(async () => {
-    if (!activeProfileId || !lastPlan[planKey]) return;
-    const restored = lastPlan[planKey];
-    setPlansByMonth(prev => ({ ...prev, [planKey]: restored }));
-    setLastPlan(prev => { const n = { ...prev }; delete n[planKey]; return n; });
+    if (!activeProfileId || !undoKey || !lastPlan[undoKey]) return;
+    const restored = lastPlan[undoKey];
 
-    // Wipe and refill this month's plans to match restored state
-    const { error: delErr } = await supabase.from('plans').delete()
-      .eq('profile_id', activeProfileId).eq('year', viewYear).eq('month', viewMonth);
-    if (delErr) { reportError('undo delete', delErr); return; }
+    setPlansByMonth(prev => {
+      const next = { ...prev };
+      for (const d of visibleDays) {
+        const mk = `${d.getFullYear()}-${d.getMonth()}`;
+        const monthMap = { ...(next[mk] || {}) };
+        const v = restored[dateKey(d)];
+        if (v === null || v === undefined) delete monthMap[d.getDate()];
+        else monthMap[d.getDate()] = v;
+        next[mk] = monthMap;
+      }
+      return next;
+    });
+    setLastPlan(prev => { const n = { ...prev }; delete n[undoKey]; return n; });
 
-    const insertRows = Object.entries(restored)
-      .filter(([, v]) => v !== null && v !== undefined)
-      .map(([d, v]) => ({
+    // Wipe visible range, refill with restored.
+    const byMonth = groupByMonth(visibleDays);
+    for (const { year, month, days } of Object.values(byMonth)) {
+      const { error } = await supabase.from('plans').delete()
+        .eq('profile_id', activeProfileId).eq('year', year).eq('month', month).in('day', days);
+      if (error) { reportError('undo delete', error); return; }
+    }
+    const insertRows = visibleDays
+      .map(d => ({ d, v: restored[dateKey(d)] }))
+      .filter(x => x.v !== null && x.v !== undefined)
+      .map(({ d, v }) => ({
         profile_id: activeProfileId,
-        year: viewYear, month: viewMonth, day: +d,
+        year: d.getFullYear(), month: d.getMonth(), day: d.getDate(),
         meal_id: (v === EAT_OUT || v === LEFTOVER) ? null : v,
         special: (v === EAT_OUT || v === LEFTOVER) ? v : null,
       }));
     if (insertRows.length) {
-      const { error: insErr } = await supabase.from('plans').insert(insertRows);
-      if (insErr) reportError('undo insert', insErr);
+      const { error } = await supabase.from('plans').insert(insertRows);
+      if (error) reportError('undo insert', error);
     }
-  }, [activeProfileId, lastPlan, planKey, viewYear, viewMonth]);
-
-  const canUndo = !!lastPlan[planKey];
+  }, [activeProfileId, undoKey, lastPlan, visibleDays]);
 
   // ── Locked days ─────────────────────────────────────────────────────────
 
-  const toggleLockDay = useCallback(async (day) => {
+  const toggleLockDay = useCallback(async (date) => {
     if (!activeProfileId) return;
-    const arr = lockedDaysByMonth[planKey] || [];
-    const isLocked = arr.includes(day);
-    const nextArr = isLocked ? arr.filter(d => d !== day) : [...arr, day];
-    setLockedDaysByMonth(prev => ({ ...prev, [planKey]: nextArr }));
+    const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
+    const monthKey = `${y}-${m}`;
+    const arr = lockedDaysByMonth[monthKey] || [];
+    const isLocked = arr.includes(d);
+    const nextArr = isLocked ? arr.filter(x => x !== d) : [...arr, d];
+    setLockedDaysByMonth(prev => ({ ...prev, [monthKey]: nextArr }));
 
     if (isLocked) {
       const { error } = await supabase.from('locked_days').delete()
-        .eq('profile_id', activeProfileId).eq('year', viewYear).eq('month', viewMonth).eq('day', day);
+        .eq('profile_id', activeProfileId).eq('year', y).eq('month', m).eq('day', d);
       if (error) reportError('unlock day', error);
     } else {
       const { error } = await supabase.from('locked_days')
-        .insert({ profile_id: activeProfileId, year: viewYear, month: viewMonth, day });
+        .insert({ profile_id: activeProfileId, year: y, month: m, day: d });
       if (error) reportError('lock day', error);
     }
-  }, [activeProfileId, lockedDaysByMonth, planKey, viewYear, viewMonth]);
+  }, [activeProfileId, lockedDaysByMonth]);
 
   // ── Grocery checked (local-only) ────────────────────────────────────────
 
@@ -655,15 +797,19 @@ export function useMealPlan() {
   }, [activeProfileId]);
 
   // ── Navigation ──────────────────────────────────────────────────────────
+  // Step direction depends on view mode: 1 month, 1 week, or 2 weeks.
 
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
+  const step = (sign) => {
+    setViewAnchor(prev => {
+      if (viewMode === 'month') return new Date(prev.getFullYear(), prev.getMonth() + sign, 1);
+      const days = viewMode === 'biweek' ? 14 : 7;
+      return addDays(prev, sign * days);
+    });
   };
-
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
+  const prevMonth = () => step(-1);  // name kept for component-API compatibility
+  const nextMonth = () => step(1);
+  const goToToday = () => {
+    setViewAnchor(viewMode === 'month' ? startOfMonth(today) : startOfWeek(today));
   };
 
   return {
@@ -678,11 +824,15 @@ export function useMealPlan() {
     currentLocked, lockedDays,
     enabledCategories, darkMode,
     canUndo,
-    // Plan actions
+    // View mode + visible range (for CalendarView)
+    viewMode, setViewMode: changeViewMode,
+    visibleDays, visiblePlan, visibleLocked, viewLabel,
+    // Plan actions (Date-based)
     regenerate, undoRegenerate,
     reassignDay, swapDays,
     toggleEatOut, toggleLeftover, clearDay,
     toggleLockDay, toggleCategory, updateDarkMode,
+    goToToday,
     // Meal library actions
     addMeal, addMeals, deleteMeal, editMeal, updateMealRecipe, updateMealRecipes,
     // Ingredient library

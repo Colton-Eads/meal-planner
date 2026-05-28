@@ -17,7 +17,7 @@ export default function App() {
   const [tab, setTab] = useState('planner');
   const [recipeEditorMealId, setRecipeEditorMealId] = useState(null);
   const [recipeViewMealId, setRecipeViewMealId] = useState(null);
-  const [dayViewDay, setDayViewDay] = useState(null);
+  const [dayViewDate, setDayViewDate] = useState(null);
   const [importType, setImportType] = useState(null); // null | 'recipes' | 'meals'
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone());
 
@@ -30,7 +30,10 @@ export default function App() {
     meals, activeMeals, currentPlan, viewYear, viewMonth, planKey,
     eatOutEnabled, eatOutCount, eatOutSameNight, eatOutDayOfWeek,
     householdSize, groceryChecked,
-    currentLocked, enabledCategories, darkMode, canUndo,
+    enabledCategories, darkMode, canUndo,
+    // View mode + visible range
+    viewMode, setViewMode,
+    visibleDays, visiblePlan, visibleLocked, viewLabel,
     // Plan actions
     regenerate, undoRegenerate,
     reassignDay, swapDays,
@@ -103,26 +106,25 @@ export default function App() {
       {recipeViewMeal && (
         <RecipeView meal={recipeViewMeal} onClose={handleCloseView} onEdit={handleEditFromView} />
       )}
-      {dayViewDay != null && (() => {
-        const v = currentPlan[dayViewDay];
+      {dayViewDate && (() => {
+        const k = `${dayViewDate.getFullYear()}-${String(dayViewDate.getMonth() + 1).padStart(2, '0')}-${String(dayViewDate.getDate()).padStart(2, '0')}`;
+        const v = visiblePlan[k];
         const isSpecial = v === EAT_OUT || v === LEFTOVER;
         const dayMeal = !isSpecial && v ? meals.find(m => m.id === v) ?? null : null;
         return (
           <DayView
-            day={dayViewDay}
-            viewYear={viewYear}
-            viewMonth={viewMonth}
+            date={dayViewDate}
             planValue={v}
             meal={dayMeal}
-            locked={currentLocked.has(dayViewDay)}
+            locked={visibleLocked.has(k)}
             meals={activeMeals}
-            onClose={() => setDayViewDay(null)}
+            onClose={() => setDayViewDate(null)}
             onReassign={reassignDay}
-            onClear={(day) => { clearDay(day); setDayViewDay(null); }}
+            onClear={(date) => { clearDay(date); setDayViewDate(null); }}
             onToggleEatOut={toggleEatOut}
             onToggleLeftover={toggleLeftover}
             onToggleLock={toggleLockDay}
-            onEditRecipe={(meal) => { setDayViewDay(null); handleOpenEditor(meal); }}
+            onEditRecipe={(meal) => { setDayViewDate(null); handleOpenEditor(meal); }}
           />
         );
       })()}
@@ -168,17 +170,21 @@ export default function App() {
       <main className="app-main">
         {tab === 'planner' ? (
           <CalendarView
+            viewMode={viewMode}
+            viewLabel={viewLabel}
+            visibleDays={visibleDays}
+            visiblePlan={visiblePlan}
+            visibleLocked={visibleLocked}
             viewYear={viewYear}
             viewMonth={viewMonth}
-            currentPlan={currentPlan}
             meals={meals}
             eatOutEnabled={eatOutEnabled}
             eatOutCount={eatOutCount}
             eatOutSameNight={eatOutSameNight}
             eatOutDayOfWeek={eatOutDayOfWeek}
-            currentLocked={currentLocked}
             enabledCategories={enabledCategories}
             canUndo={canUndo}
+            onSetViewMode={setViewMode}
             onRegenerate={regenerate}
             onUndo={undoRegenerate}
             onReassign={reassignDay}
@@ -190,7 +196,7 @@ export default function App() {
             onEatOutCountChange={updateEatOutCount}
             onEatOutSameNightChange={updateEatOutSameNight}
             onEatOutDayOfWeekChange={updateEatOutDayOfWeek}
-            onDayClick={setDayViewDay}
+            onDayClick={setDayViewDate}
           />
         ) : tab === 'library' ? (
           <MealLibrary

@@ -20,12 +20,15 @@ function hasContent(recipe) {
 }
 
 export default function DayView({
-  day, viewYear, viewMonth,
+  date,
   planValue, meal, locked, meals,
   onClose, onReassign, onClear,
   onToggleEatOut, onToggleLeftover, onToggleLock,
   onEditRecipe,
 }) {
+  const day = date.getDate();
+  const viewYear = date.getFullYear();
+  const viewMonth = date.getMonth();
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [showHelp, setShowHelp] = useState(false);
@@ -34,7 +37,6 @@ export default function DayView({
   const isEatOut = planValue === EAT_OUT;
   const isLeftover = planValue === LEFTOVER;
   const cat = meal ? CATEGORIES[meal.category] : null;
-  const date = new Date(viewYear, viewMonth, day);
   const r = meal?.recipe;
   const hasRecipe = hasContent(r);
 
@@ -47,13 +49,13 @@ export default function DayView({
   const handlePrint = () => window.print();
 
   const handlePick = (mealId) => {
-    onReassign(day, mealId);
+    onReassign(date, mealId);
     setShowPicker(false);
     setChecked({});
   };
 
   const handleShuffle = () => {
-    onReassign(day);
+    onReassign(date);
     setChecked({});
   };
 
@@ -118,24 +120,24 @@ export default function DayView({
             )}
             <button
               className={`day-view-btn${isEatOut ? ' active-eat-out' : ''}`}
-              onClick={() => onToggleEatOut(day)}
+              onClick={() => onToggleEatOut(date)}
             >
               <span className="dv-btn-icon">🍽</span> {isEatOut ? 'Cancel Eat Out' : 'Eat Out'}
             </button>
             <button
               className={`day-view-btn${isLeftover ? ' active-leftover' : ''}`}
-              onClick={() => onToggleLeftover(day)}
+              onClick={() => onToggleLeftover(date)}
             >
               <span className="dv-btn-icon">♻</span> {isLeftover ? 'Cancel Leftovers' : 'Leftovers'}
             </button>
             <button
               className={`day-view-btn${locked ? ' active-lock' : ''}`}
-              onClick={() => onToggleLock(day)}
+              onClick={() => onToggleLock(date)}
             >
               <span className="dv-btn-icon">🔒</span> {locked ? 'Unlock' : 'Lock'}
             </button>
             {!isEatOut && !isLeftover && meal && (
-              <button className="day-view-btn danger" onClick={() => { onClear(day); onClose(); }}>
+              <button className="day-view-btn danger" onClick={() => { onClear(date); onClose(); }}>
                 <span className="dv-btn-icon">✕</span> Clear
               </button>
             )}
