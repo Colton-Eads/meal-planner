@@ -72,7 +72,15 @@ Each meal needs the following before grocery list generation is possible:
 
 
 ---
-_Last updated: 2026-04-23_
+
+## Later / Tech Debt
+- [ ] Automated test suite — no unit/integration/e2e tests today. Everything we ship is verified by hand. At minimum: tests around `useMealPlan` (the data layer) and the auth flow.
+- [ ] PWA install: ship 192px + 512px PNG icons and reference them in `public/manifest.json` so iOS "Add to Home Screen" gets a proper icon (currently SVG-only)
+- [ ] Full mobile-responsiveness audit (calendar, recipe editor, grocery list — only the header has been touched)
+- [ ] Stripe wiring — `subscriptions` schema and `isMember` stub are already in place; need Stripe checkout, customer portal link, and a webhook handler (Supabase Edge Function) to populate the subscriptions table
+
+---
+_Last updated: 2026-05-28_
 
 ## Notes
 - Recipes: user to provide ingredients in structured format (quantity + unit + name) for grocery list aggregation to work cleanly. Can enter in-app or import via CSV.
