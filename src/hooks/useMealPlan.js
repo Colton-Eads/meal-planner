@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { DEFAULT_MEALS } from '../data/meals';
 import { RECIPE_DATA } from '../data/recipes';
 import { INGREDIENT_SEED } from '../data/ingredientSeed';
@@ -237,9 +237,12 @@ export function useMealPlan() {
 
   // ── Derived state ────────────────────────────────────────────────────────
   const planKey = `${viewYear}-${viewMonth}`;
-  const currentPlan = plan[planKey] || {};
-  const currentLocked = new Set(lockedDays[planKey] || []);
-  const activeMeals = meals.filter(m => enabledCategories.includes(m.category));
+  const currentPlan = useMemo(() => plan[planKey] || {}, [plan, planKey]);
+  const currentLocked = useMemo(() => new Set(lockedDays[planKey] || []), [lockedDays, planKey]);
+  const activeMeals = useMemo(
+    () => meals.filter(m => enabledCategories.includes(m.category)),
+    [meals, enabledCategories]
+  );
 
   // ── Profile management ───────────────────────────────────────────────────
 
@@ -510,13 +513,23 @@ export function useMealPlan() {
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
-  const prevMonth = useCallback(() => {
-    setViewMonth(m => { if (m === 0) { setViewYear(y => y - 1); return 11; } return m - 1; });
-  }, []);
+  const prevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(y => y - 1);
+    } else {
+      setViewMonth(m => m - 1);
+    }
+  };
 
-  const nextMonth = useCallback(() => {
-    setViewMonth(m => { if (m === 11) { setViewYear(y => y + 1); return 0; } return m + 1; });
-  }, []);
+  const nextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(y => y + 1);
+    } else {
+      setViewMonth(m => m + 1);
+    }
+  };
 
   return {
     // Profile
