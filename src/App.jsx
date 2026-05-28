@@ -27,7 +27,7 @@ export default function App() {
     profiles, activeProfileId,
     addProfile, deleteProfile, renameProfile, switchProfile,
     // Meal data
-    meals, activeMeals, currentPlan, viewYear, viewMonth, planKey,
+    meals, activeMeals, viewYear, viewMonth, planKey,
     eatOutEnabled, eatOutCount, eatOutSameNight, eatOutDayOfWeek,
     householdSize, groceryChecked,
     enabledCategories, darkMode, canUndo,
@@ -216,10 +216,12 @@ export default function App() {
         ) : (
           <GroceryList
             meals={meals}
-            currentPlan={currentPlan}
             viewMonth={viewMonth}
             viewYear={viewYear}
             planKey={planKey}
+            visiblePlan={visiblePlan}
+            viewLabel={viewLabel}
+            viewMode={viewMode}
             householdSize={householdSize}
             onHouseholdSizeChange={updateHouseholdSize}
             groceryChecked={groceryChecked}

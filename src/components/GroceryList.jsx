@@ -1,11 +1,6 @@
 import { useMemo, useState } from 'react';
 import { EAT_OUT, LEFTOVER } from '../hooks/useMealPlan';
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-];
-
 const CATEGORY_ORDER = [
   'Meat & Seafood',
   'Produce',
@@ -298,53 +293,23 @@ function buildExportText(byCategory, rangeLabel, householdSize) {
   return lines.join('\n');
 }
 
-function filterPlanByRange(currentPlan, rangeMode, rangeStart, rangeEnd, daysInMonth) {
-  if (rangeMode === 'month') return currentPlan;
-  if (rangeMode === 'custom') {
-    const s = Math.max(1, rangeStart);
-    const e = Math.min(daysInMonth, rangeEnd);
-    return Object.fromEntries(Object.entries(currentPlan).filter(([d]) => { const n = Number(d); return n >= s && n <= e; }));
-  }
-  const weekNum = parseInt(rangeMode.replace('week', ''), 10) || 1;
-  const start = (weekNum - 1) * 7 + 1;
-  const end = Math.min(start + 6, daysInMonth);
-  return Object.fromEntries(Object.entries(currentPlan).filter(([d]) => { const n = Number(d); return n >= start && n <= end; }));
-}
-
-function getRangeLabel(rangeMode, rangeStart, rangeEnd, viewMonth, viewYear, daysInMonth) {
-  const month = MONTH_NAMES[viewMonth];
-  if (rangeMode === 'month') return `${month} ${viewYear}`;
-  if (rangeMode === 'custom') {
-    const s = Math.max(1, rangeStart);
-    const e = Math.min(daysInMonth, rangeEnd);
-    return `${month} ${viewYear} — Days ${s}–${e}`;
-  }
-  const weekNum = parseInt(rangeMode.replace('week', ''), 10) || 1;
-  const start = (weekNum - 1) * 7 + 1;
-  const end = Math.min(start + 6, daysInMonth);
-  return `${month} ${viewYear} — Week ${weekNum} (Days ${start}–${end})`;
-}
-
 export default function GroceryList({
-  meals, currentPlan, viewMonth, viewYear, planKey,
+  meals, viewMonth, viewYear, planKey,
+  visiblePlan, viewLabel, viewMode,
   householdSize, onHouseholdSizeChange,
   groceryChecked, onToggleItem, onClearChecked,
   ingredientLibrary,
 }) {
-  const [rangeMode, setRangeMode] = useState('month');
-  const [rangeStart, setRangeStart] = useState(1);
-  const [rangeEnd, setRangeEnd] = useState(7);
   const [showMissingList, setShowMissingList] = useState(false);
   const [showExport, setShowExport] = useState(false);
 
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const weekCount = Math.ceil(daysInMonth / 7);
+  // Grocery scope follows the calendar's view mode. visiblePlan keys are
+  // YYYY-MM-DD strings; buildGroceryList only iterates values, so the key
+  // shape doesn't matter.
+  const planSubset = visiblePlan;
 
-  const planSubset = useMemo(
-    () => filterPlanByRange(currentPlan, rangeMode, rangeStart, rangeEnd, daysInMonth),
-    [currentPlan, rangeMode, rangeStart, rangeEnd, daysInMonth],
-  );
-
+  // Checked items still persist per-month so "I bought milk" survives when
+  // you flip from week view → month view (same checked-state visible).
   const checkedSet = new Set(groceryChecked[planKey] || []);
 
   const categorize = useMemo(
@@ -359,7 +324,7 @@ export default function GroceryList({
 
   const totalItems = Object.values(byCategory).reduce((s, arr) => s + arr.length, 0);
   const checkedCount = [...checkedSet].filter(k => Object.values(byCategory).flat().some(i => i.key === k)).length;
-  const rangeLabel = getRangeLabel(rangeMode, rangeStart, rangeEnd, viewMonth, viewYear, daysInMonth);
+  const rangeLabel = viewLabel;
 
   const exportText = buildExportText(byCategory, rangeLabel, householdSize);
 
@@ -380,16 +345,17 @@ export default function GroceryList({
 
   const handlePrint = () => window.print();
 
-  const noMealsInPlan = Object.values(currentPlan).every(v => !v || v === EAT_OUT || v === LEFTOVER);
+  const noMealsInPlan = Object.values(visiblePlan).every(v => !v || v === EAT_OUT || v === LEFTOVER);
+  const scopeLabel = viewMode === 'month' ? 'month' : viewMode === 'week' ? 'week' : 'period';
 
   if (noMealsInPlan) {
     return (
       <div className="grocery-view">
         <div className="grocery-header">
           <h2 className="section-title">Grocery List</h2>
-          <div className="grocery-month">{MONTH_NAMES[viewMonth]} {viewYear}</div>
+          <div className="grocery-month">{viewLabel}</div>
         </div>
-        <p className="empty-state">No meals planned for this month yet. Generate a plan on the Planner tab first.</p>
+        <p className="empty-state">No meals planned for this {scopeLabel} yet. Generate a plan on the Planner tab first.</p>
       </div>
     );
   }
@@ -466,32 +432,9 @@ export default function GroceryList({
       </div>
 
       <div className="grocery-range">
-        <span className="filter-label">Range:</span>
-        <button className={`range-btn${rangeMode === 'month' ? ' active' : ''}`} onClick={() => setRangeMode('month')}>
-          Full Month
-        </button>
-        {Array.from({ length: weekCount }, (_, i) => (
-          <button
-            key={i}
-            className={`range-btn${rangeMode === `week${i + 1}` ? ' active' : ''}`}
-            onClick={() => setRangeMode(`week${i + 1}`)}
-          >
-            Week {i + 1}
-          </button>
-        ))}
-        <button className={`range-btn${rangeMode === 'custom' ? ' active' : ''}`} onClick={() => setRangeMode('custom')}>
-          Custom
-        </button>
-        {rangeMode === 'custom' && (
-          <div className="range-custom">
-            <span>Day</span>
-            <input type="number" className="count-input" min={1} max={daysInMonth} value={rangeStart}
-              onChange={e => setRangeStart(Math.max(1, Math.min(daysInMonth, Number(e.target.value))))} />
-            <span>to</span>
-            <input type="number" className="count-input" min={1} max={daysInMonth} value={rangeEnd}
-              onChange={e => setRangeEnd(Math.max(1, Math.min(daysInMonth, Number(e.target.value))))} />
-          </div>
-        )}
+        <span className="filter-label grocery-scope-hint">
+          Showing groceries for {scopeLabel}. Change the calendar view on the Planner tab to adjust scope.
+        </span>
       </div>
 
       {mealCount === 0 ? (
